@@ -10,12 +10,13 @@
       :author "Armando Blancas"}
   blancas.eisen.core
   (:use [blancas.eisen.parser :only (decls)]
+	[blancas.eisen.trans :only (trans)]
         [blancas.kern.core :only (parse run print-error f->s)]))
 
 
 (defn parse-eisen
   "Parses the supplied text; returns a sequence objects to translate,
-   each either a top-level declaration or a naked expression."
+   each either a top-level declaration or expression."
   ([text]
    (parse-eisen text ""))
   ([text source]
@@ -28,20 +29,18 @@
 (defn trans-eisen
   "Translates the supplied AST. Returns a map with three fields:
    :ok     true on success; false otherwise
-   :decls  a sequence of defined names; may be empty but never nil
    :value  the value of the last expression
    :error  error or warning message; not nil if :ok is false"
   [decls]
-  (let [v (doseq [decl decls]
-	    (let [name (symbol (:name decl)) value (:val decl)]
-              (eval `(def ~name ~value))))]
-    {:ok true :decls () :value v :error nil}))
+  (let [result (trans (first decls))]
+    (if (:ok result)
+      (assoc result :value (eval (:value result)))
+      result)))
 
 
   (defn eisen
   "Translates the supplied text. Returns a map with three fields:
    :ok     true on success; false otherwise
-   :decls  a sequence of defined names; may be empty but never nil
    :value  the value of the last expression
    :error  error or warning message; not nil if :ok is false"
   ([text]

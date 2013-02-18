@@ -24,7 +24,7 @@ trim-newline         Yes
 Literal values follow the rules of Java and Clojure."
       :author "Armando Blancas"}
   blancas.eisen.parser
-  (:use [blancas.kern.core])
+  (:use [blancas.kern core expr])
   (:require [blancas.kern.lexer :as lex]))
 
 
@@ -38,49 +38,56 @@ Literal values follow the rules of Java and Clojure."
     :nested-comments    true
     :identifier-start   (<|> lower (sym* \_))
     :identifier-letter  (<|> alpha-num (sym* \_))
-    :reserved-names     []))
+    :reserved-names     ["def"]))
 
-(def rec (lex/make-parsers eisen-style))
+
+(def- rec (lex/make-parsers eisen-style))
+
 
 (def trim       (:trim       rec))
 (def lexeme     (:lexeme     rec))
-(def sym        (:sym        rec))
-(def new-line   (:new-line   rec))
-(def one-of     (:one-of     rec))
-(def none-of    (:none-of    rec))
-(def token      (:token      rec))
-(def word       (:word       rec))
-(def identifier (:identifier rec))
-(def field      (:field      rec))
-(def char-lit   (:char-lit   rec))
-(def string-lit (:string-lit rec))
-(def dec-lit    (:dec-lit    rec))
-(def oct-lit    (:oct-lit    rec))
-(def hex-lit    (:hex-lit    rec))
-(def float-lit  (:float-lit  rec))
-(def bool-lit   (:bool-lit   rec))
-(def nil-lit    (:nil-lit    rec))
 (def parens     (:parens     rec))
 (def braces     (:braces     rec))
 (def angles     (:angles     rec))
 (def brackets   (:brackets   rec))
-(def semi       (:semi       rec))
-(def comma      (:comma      rec))
-(def colon      (:colon      rec))
-(def dot        (:dot        rec))
 (def semi-sep   (:semi-sep   rec))
 (def semi-sep1  (:semi-sep1  rec))
 (def comma-sep  (:comma-sep  rec))
 (def comma-sep1 (:comma-sep1 rec))
 
 
-(def sym-name
-  "Parses a name for anything that is not a top-level declaration.
-   Cannot go at the start of a line, which signals a new declaration."
-  (bind [p get-position]
-    (if (= (:col p) 1)
-      (fail "")
-      identifier)))
+(defn- lexer
+  "Wraps a lexer parser to produce a token record with
+   the token code, value and position."
+  ([tok rec]
+   (bind [pos get-position val (tok rec)]
+     (return {:tok tok :value val :pos pos})))
+  ([tok rec arg]
+   (bind [pos get-position val ((tok rec) arg)]
+     (return {:tok tok :vallue val :pos pos}))))
+
+
+(def new-line   (lexer :new-line   rec))
+(def identifier (lexer :identifier rec))
+(def char-lit   (lexer :char-lit   rec))
+(def string-lit (lexer :string-lit rec))
+(def dec-lit    (lexer :dec-lit    rec))
+(def oct-lit    (lexer :oct-lit    rec))
+(def hex-lit    (lexer :hex-lit    rec))
+(def float-lit  (lexer :float-lit  rec))
+(def bool-lit   (lexer :bool-lit   rec))
+(def nil-lit    (lexer :nil-lit    rec))
+(def semi       (lexer :semi       rec))
+(def comma      (lexer :comma      rec))
+(def colon      (lexer :colon      rec))
+(def dot        (lexer :dot        rec))
+
+(defn sym     [x] (lexer :sym     rec x))
+(defn one-of  [x] (lexer :one-of  rec x))
+(defn none-of [x] (lexer :none-of rec x))
+(defn token   [x] (lexer :token   rec x))
+(defn word    [x] (lexer :word    rec x))
+(defn field   [x] (lexer :field   rec x))
 
 
 (def key-name
@@ -131,7 +138,7 @@ Literal values follow the rules of Java and Clojure."
 
 (def factor
   "A factor is an operand within an expression."
-  (<|> sym-name
+  (<|> identifier
        key-name
        char-lit
        string-lit
@@ -149,18 +156,27 @@ Literal values follow the rules of Java and Clojure."
        (parens (fwd expr))))
 
 
-(def expr factor)
+(def unary  (prefix1* :UNIOP  factor uni-op))
+(def power  (chainr1* :BINOP  unary  pow-op))
+(def term   (chainl1* :BINOP  power  mul-op))
+(def sum    (chainl1* :BINOP  term   add-op))
+(def relex  (chainl1* :BINOP  sum    rel-op))
+(def orex   (chainl1* :BINOP  relex  or-op))
+(def expr   (chainl1* :BINOP  orex   and-op))
 
 
 (def decl
   "Parses a declaration as a named value or funcion. The name should be
    placed at the start of a line to ensure it denotes a declaration."
-  (bind [name identifier  parms (many sym-name)  _ (sym \=)  val expr]
+  (bind [_     (word "def")
+	 name  identifier
+	 parms (many identifier)
+	 _     (sym \=)
+	 val   expr]
     (let [tok (if (seq parms) :defn :def)]
-      (return {:tok tok :name name :parms parms :val val}))))
+      (return {:tok tok :name (:value name) :parms parms :value val}))))
 
 
 (def decls
-  "Parses one or more declarations or naked expressions, which
-   are allowed for Java interop or side-effects."
-  (>> trim (many (<|> decl expr))))
+  "Parses one or more declarations or expressions."
+  (>> trim (many1 (<|> decl expr))))

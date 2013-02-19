@@ -20,37 +20,61 @@
 (deftest test-0000
   (fact "Decimal literal"
     (let [p1 (parse-eisen "787")]
-      (-> p1 :decls first :value)) => 787))
+      (-> p1 :decls first :value)) => 787
+    (let [p1 (parse-eisen "10000000000000000000")]
+      (-> p1 :decls first :value)) => 10000000000000000000N
+    (let [p1 (parse-eisen "100N")]
+      (-> p1 :decls first :value)) => 100N))
 
 
 (deftest test-0005
   (fact "Octal literal"
     (let [p1 (parse-eisen "0644")]
-      (-> p1 :decls first :value)) => 0644))
+      (-> p1 :decls first :value)) => 0644
+    (let [p1 (parse-eisen "07777777777777777777777")]
+      (-> p1 :decls first :value)) => 73786976294838206463N
+    (let [p1 (parse-eisen "0100N")]
+      (-> p1 :decls first :value)) => 0100N))
 
 
 (deftest test-0010
   (fact "Hex literal"
     (let [p1 (parse-eisen "0xCAFE")]
-      (-> p1 :decls first :value)) => 0xCAFE))
+      (-> p1 :decls first :value)) => 0xCAFE
+    (let [p1 (parse-eisen "0xCAFEFFFFFFFFFFFF")]
+      (-> p1 :decls first :value)) => 14627410114722660351N
+    (let [p1 (parse-eisen "0xCAFEN")]
+      (-> p1 :decls first :value)) => 0xCAFEN))
 
 
 (deftest test-0015
   (fact "Floating-point literal"
     (let [p1 (parse-eisen "3.1415927")]
-      (-> p1 :decls first :value)) => 3.1415927))
+      (-> p1 :decls first :value)) => 3.1415927
+    (let [p1 (parse-eisen "3.1415927e8")]
+      (-> p1 :decls first :value)) => 314159270.0
+    (let [p1 (parse-eisen "3.1415927M")]
+      (-> p1 :decls first :value)) => 3.1415927M))
 
 
 (deftest test-0020
   (fact "Character literal"
     (let [p1 (parse-eisen "'z'")]
-      (-> p1 :decls first :value)) => \z))
+      (-> p1 :decls first :value)) => \z
+    (let [p1 (parse-eisen "'\\n'")]
+      (-> p1 :decls first :value)) => \newline
+    (let [p1 (parse-eisen "'\\''")]
+      (-> p1 :decls first :value)) => \'))
 
 
 (deftest test-0025
   (fact "String literal"
     (let [p1 (parse-eisen "\"z\"")]
-      (-> p1 :decls first :value)) => "z"))
+      (-> p1 :decls first :value)) => "z"
+    (let [p1 (parse-eisen "\"\\n\"")]
+      (-> p1 :decls first :value)) => "\n"
+    (let [p1 (parse-eisen "\"\\\"\"")]
+      (-> p1 :decls first :value)) => "\""))
 
 
 (deftest test-0030
@@ -84,7 +108,15 @@
 (deftest test-0050
   (fact "An eisen identifier."
     (let [p1 (parse-eisen "foobar")]
-      (-> p1 :decls first :value)) => "foobar"))
+      (-> p1 :decls first :value)) => "foobar"
+    (let [p1 (parse-eisen "_foobar")]
+      (-> p1 :decls first :value)) => "_foobar"
+    (let [p1 (parse-eisen "foo_bar123")]
+      (-> p1 :decls first :value)) => "foo_bar123"
+    (let [p1 (parse-eisen "_0123")]
+      (-> p1 :decls first :value)) => "_0123"
+    (let [p1 (parse-eisen "Foo")] ;; first capital is for data types
+      (:ok p1) => false?)))
 
 
 ;; +-------------------------------------------------------------+

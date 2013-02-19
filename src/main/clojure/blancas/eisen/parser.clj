@@ -125,24 +125,24 @@ Literal values follow the rules of Java and Clojure."
 (def set-lit
   "Parses a set literal."
   (<:> (bind [pos get-position
-	      val (<$> set (>> (sym* \#)
-			       (braces (comma-sep (fwd expr)))))]
+	      val (>> (sym* \#)
+		      (braces (comma-sep (fwd expr))))]
          (return {:tok :set-lit :value val :pos pos}))))
 
 
 (def map-lit
   "Parses a map literal."
   (bind [pos get-position
-	 val (<$> (comp (partial apply hash-map) flatten)
-		  (braces (comma-sep (fwd expr))))]
+	 val (braces (comma-sep (fwd expr)))]
     (return {:tok :map-lit :value val :pos pos})))
 
 
 (def re-lit
   "Parses a regular-expression literal."
   (<:> (bind [pos get-position
-	      val (>> (sym* \#) string-lit)]
-         (return {:tok :re-lit :value (read-string (str "#\"" val "\"")) :pos pos}))))
+	      reg (>> (sym* \#) string-lit)]
+         (let [val (str "#\"" (:value reg) "\"")]
+           (return {:tok :re-lit :value (read-string val) :pos pos})))))
 
 
 (def factor

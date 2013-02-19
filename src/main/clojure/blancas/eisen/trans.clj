@@ -48,9 +48,6 @@
      :colon
      :dot
      :keyword
-     :vector-lit
-     :set-lit
-     :map-lit
      :re-lit)
       (right (:value ast))
 
@@ -58,6 +55,24 @@
       (let [vals (trans (:value ast))]
         (if (:ok vals)
           (right `(list ~@(:decls vals)))
+	  (left (:error vals))))
+
+    (:vector-lit)
+      (let [vals (trans (:value ast))]
+        (if (:ok vals)
+          (right (:decls vals))
+	  (left (:error vals))))
+
+    (:set-lit)
+      (let [vals (trans (:value ast))]
+        (if (:ok vals)
+          (right (set (:decls vals)))
+	  (left (:error vals))))
+
+    (:map-lit)
+      (let [vals (trans (:value ast))]
+        (if (:ok vals)
+          (right (apply hash-map (:decls vals)))
 	  (left (:error vals))))))
 
 

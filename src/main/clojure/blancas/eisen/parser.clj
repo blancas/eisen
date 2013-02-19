@@ -147,8 +147,7 @@ Literal values follow the rules of Java and Clojure."
 
 (def factor
   "A factor is an operand within an expression."
-  (<|> identifier
-       key-name
+  (<|> key-name
        char-lit
        string-lit
        dec-lit
@@ -157,6 +156,7 @@ Literal values follow the rules of Java and Clojure."
        float-lit
        bool-lit
        nil-lit
+       identifier
        list-lit
        vector-lit
        set-lit

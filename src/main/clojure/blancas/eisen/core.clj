@@ -22,38 +22,47 @@
   ([text source]
    (let [st (parse decls text source)]
      (if (:ok st)
-       {:ok true :decls (:value st) :error nil}
-       {:ok false :decls nil :error (with-out-str (print-error st))}))))
-
+       {:ok true :decls (:value st)}
+       {:ok false :error (with-out-str (print-error st))}))))
+  
 
 (defn trans-eisen
-  "Translates the supplied AST. Returns a map with three fields:
+  "Translates the supplied Eisen code into unevaluated Clojure code.
+   Returns a map with three fields:
    :ok     true on success; false otherwise
-   :value  the value of the last expression
+   :decls  a vector of Clojure forms
    :error  error or warning message; not nil if :ok is false"
-  [decls]
-  (let [result (trans (first decls))]
-    (if (:ok result)
-      (assoc result :value (eval (:value result)))
-      result)))
+  ([text]
+   (trans-eisen text ""))
+  ([text source]
+   (let [ast (parse-eisen text source)]
+     (if (:ok ast)
+       (trans (:decls ast))
+       ast))))
 
 
   (defn eisen
-  "Translates the supplied text. Returns a map with three fields:
-   :ok     true on success; false otherwise
-   :value  the value of the last expression
-   :error  error or warning message; not nil if :ok is false"
+    "Translates the supplied Eisen code into Clojure and evaluates
+     the resulting forms. Returns a map with three fields:
+     :ok     true on success; false otherwise
+     :value  the value of the last form
+     :decls  a vector of Clojure forms
+     :error  error or warning message; not nil if :ok is false"
   ([text]
    (eisen text ""))
   ([text source]
-   (let [st (parse-eisen text source)]
-     (if (:ok st)
-       (trans-eisen (:decls st))
-       st))))
+   (let [ast (parse-eisen text source)]
+     (if (:ok ast)
+       (let [code (trans (:decls ast))]
+	 (if (:ok code)
+	   (let [vals (map eval (:decls code))]
+	     (assoc code :value (last vals)))
+	   code))
+       ast))))
 
 
 (defn eisen*
-  "Parses the supplied text as a dry run; discards the parsed results.
+  "Parses the supplied Eisen code as a dry run; discards the parsed results.
    Any errors are printed to stdout; intended for testing at the REPL."
   ([text] (eisen* text ""))
   ([text source] (run decls text source)))

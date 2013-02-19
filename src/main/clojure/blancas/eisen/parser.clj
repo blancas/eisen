@@ -92,9 +92,11 @@ Literal values follow the rules of Java and Clojure."
 
 (def key-name
   "Parses a Clojure keyword."
-  (<$> keyword
-       (>> (sym* \:)
-	   (<+> (lexeme (many1 (none-of* " `~@%^*()[]{};\"\\,")))))))
+  (bind [pos get-position
+	 key (<$> keyword
+	          (>> (sym* \:)
+		      (<+> (lexeme (many1 (none-of* " `~@%^*()[]{};\"\\,"))))))]
+    (return {:tok :keyword :value key :pos pos})))
 
 
 ;; +-------------------------------------------------------------+
@@ -107,33 +109,40 @@ Literal values follow the rules of Java and Clojure."
 
 (def list-lit
   "Parses a list literal."
-  (bind [elems (brackets (comma-sep (fwd expr)))]
-    (return `(list ~@elems))))
+  (bind [pos get-position
+	 val (brackets (comma-sep (fwd expr)))]
+    (return {:tok :list-lit :value val :pos pos})))
 
 
 (def vector-lit
   "Parses a vector literal."
-  (<:> (>> (sym* \#)
-           (brackets (comma-sep (fwd expr))))))
+  (<:> (bind [pos get-position
+	      val (>> (sym* \#)
+		      (brackets (comma-sep (fwd expr))))]
+         (return {:tok :vector-lit :value val :pos pos}))))     
 
 
 (def set-lit
   "Parses a set literal."
-  (<$> set
-       (<:> (>> (sym* \#)
-                (braces (comma-sep (fwd expr)))))))
+  (<:> (bind [pos get-position
+	      val (<$> set (>> (sym* \#)
+			       (braces (comma-sep (fwd expr)))))]
+         (return {:tok :set-lit :value val :pos pos}))))
 
 
 (def map-lit
   "Parses a map literal."
-  (<$> (comp (partial apply hash-map) flatten)
-       (braces (comma-sep (fwd expr)))))
+  (bind [pos get-position
+	 val (<$> (comp (partial apply hash-map) flatten)
+		  (braces (comma-sep (fwd expr))))]
+    (return {:tok :map-lit :value val :pos pos})))
 
 
 (def re-lit
   "Parses a regular-expression literal."
-  (<:> (bind [_ (sym* \#)  s string-lit]
-         (return (read-string (str "#\"" s "\""))))))
+  (<:> (bind [pos get-position
+	      val (>> (sym* \#) string-lit)]
+         (return {:tok :re-lit :value (read-string (str "#\"" val "\"")) :pos pos}))))
 
 
 (def factor

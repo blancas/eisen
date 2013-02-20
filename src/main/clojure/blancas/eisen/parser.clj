@@ -10,9 +10,9 @@
 
 The Eisen Lexer is configured with the following settings:
 
-comment-start        /*
-comment-end          */
-comment-line         //
+comment-start        {-
+comment-end          -}
+comment-line         --
 nested-comments      Yes
 identifier-start     Lowercase or _
 identifier-letter    Alphanumeric or _ 
@@ -35,14 +35,13 @@ Literal values follow the rules of Java and Clojure."
 
 (def eisen-style
   "Lexical settings for the Eisen language."
-  (assoc lex/java-style
-    :nested-comments    true
+  (assoc lex/haskell-style
     :identifier-start   (<|> lower (sym* \_))
     :identifier-letter  (<|> alpha-num (sym* \_))
     :reserved-names     ["def"]))
 
 
-(def- rec (lex/make-parsers eisen-style))
+(def rec (lex/make-parsers eisen-style))
 
 
 (def trim       (:trim       rec))
@@ -60,12 +59,15 @@ Literal values follow the rules of Java and Clojure."
 (defn- lexer
   "Wraps a lexer parser to produce a token record with
    the token code, value and position."
+  ([p]
+   (bind [pos get-position val p]
+     (return {:token :word :value val :pos pos})))
   ([tok rec]
    (bind [pos get-position val (tok rec)]
      (return {:token tok :value val :pos pos})))
   ([tok rec & args]
    (bind [pos get-position val (apply (tok rec) args)]
-     (return {:token tok :vallue val :pos pos}))))
+     (return {:token tok :value val :pos pos}))))
 
 
 (def new-line   (lexer :new-line   rec))
@@ -170,11 +172,11 @@ Literal values follow the rules of Java and Clojure."
 
 (def uni-op (one-of "!-"))
 (def pow-op (sym \^))
-(def mul-op (one-of  "*/%"))
+(def mul-op (<|> (>> (token "//") (lexer (return "quot"))) (one-of  "*/%")))
 (def add-op (one-of "+-"))
 (def rel-op (token "==" "!=" ">=" "<=" ">" "<"))
-(def and-op (token "&&"))
 (def or-op  (token "||"))
+(def and-op (token "&&"))
 
 (def unary  (prefix1* :UNIOP  factor uni-op))
 (def power  (chainr1* :BINOP  unary  pow-op))

@@ -13,7 +13,7 @@
 	[blancas.morph.monads :only (left right either)]))
 
 
-(declare trans-expr trans)
+(declare trans-expr trans-ast trans)
 
 
 (defn trans-def
@@ -27,6 +27,15 @@
 (defn trans-defn
   "Translates an AST into a Clojure function definition."
   [ast] nil)
+
+
+(defn trans-binop
+  "Translates the application of a binary operator."
+  [ast]
+  (monad [x (trans-ast (:left ast))
+	  y (trans-ast (:right ast))]
+    (let [f (-> ast :op :value str symbol)]
+      (right `(~f ~x ~y)))))
 
 
 (defn trans-expr
@@ -51,29 +60,32 @@
      :re-lit)
       (right (:value ast))
 
-    (:list-lit)
+    :list-lit
       (let [vals (trans (:value ast))]
         (if (:ok vals)
           (right `(list ~@(:decls vals)))
 	  (left (:error vals))))
 
-    (:vector-lit)
+    :vector-lit
       (let [vals (trans (:value ast))]
         (if (:ok vals)
           (right (:decls vals))
 	  (left (:error vals))))
 
-    (:set-lit)
+    :set-lit
       (let [vals (trans (:value ast))]
         (if (:ok vals)
           (right (set (:decls vals)))
 	  (left (:error vals))))
 
-    (:map-lit)
+    :map-lit
       (let [vals (trans (:value ast))]
         (if (:ok vals)
           (right (apply hash-map (:decls vals)))
-	  (left (:error vals))))))
+	  (left (:error vals))))
+
+    :BINOP
+      (trans-binop ast)))
 
 
 (defn trans-ast

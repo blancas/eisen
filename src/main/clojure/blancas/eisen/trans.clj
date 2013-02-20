@@ -32,7 +32,7 @@
 (defn trans-expr
   "Translates an AST into a Clojure expression."
   [ast]
-  (case (:tok ast)
+  (case (:token ast)
     (:new-line
      :identifier
      :char-lit
@@ -79,9 +79,9 @@
 (defn trans-ast
   "Translates a collection of AST maps into unevaluated Clojure forms."
   [ast]
-  (cond (= (:tok ast) :def)  (trans-def ast)
-	(= (:tok ast) :defn) (trans-defn ast)
-	:else                (trans-expr ast)))
+  (cond (= (:token ast) :def)  (trans-def ast)
+	(= (:token ast) :defn) (trans-defn ast)
+	:else                  (trans-expr ast)))
 
 
 (defn trans

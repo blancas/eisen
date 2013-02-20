@@ -24,7 +24,8 @@ trim-newline         Yes
 Literal values follow the rules of Java and Clojure."
       :author "Armando Blancas"}
   blancas.eisen.parser
-  (:use [blancas.kern core expr])
+  (:use [blancas.kern.core]
+	[blancas.kern.expr :only (prefix1* chainl1* chainr1*)])
   (:require [blancas.kern.lexer :as lex]))
 
 
@@ -61,10 +62,10 @@ Literal values follow the rules of Java and Clojure."
    the token code, value and position."
   ([tok rec]
    (bind [pos get-position val (tok rec)]
-     (return {:tok tok :value val :pos pos})))
-  ([tok rec arg]
-   (bind [pos get-position val ((tok rec) arg)]
-     (return {:tok tok :vallue val :pos pos}))))
+     (return {:token tok :value val :pos pos})))
+  ([tok rec & args]
+   (bind [pos get-position val (apply (tok rec) args)]
+     (return {:token tok :vallue val :pos pos}))))
 
 
 (def new-line   (lexer :new-line   rec))
@@ -85,9 +86,10 @@ Literal values follow the rules of Java and Clojure."
 (defn sym     [x] (lexer :sym     rec x))
 (defn one-of  [x] (lexer :one-of  rec x))
 (defn none-of [x] (lexer :none-of rec x))
-(defn token   [x] (lexer :token   rec x))
-(defn word    [x] (lexer :word    rec x))
 (defn field   [x] (lexer :field   rec x))
+
+(defn token   [x & more] (apply lexer :token rec x more)) 
+(defn word    [x & more] (apply lexer :word  rec x more))
 
 
 (def key-name
@@ -96,7 +98,7 @@ Literal values follow the rules of Java and Clojure."
 	 key (<$> keyword
 	          (>> (sym* \:)
 		      (<+> (lexeme (many1 (none-of* " `~@%^*()[]{};\"\\,"))))))]
-    (return {:tok :keyword :value key :pos pos})))
+    (return {:token :keyword :value key :pos pos})))
 
 
 ;; +-------------------------------------------------------------+
@@ -111,7 +113,7 @@ Literal values follow the rules of Java and Clojure."
   "Parses a list literal."
   (bind [pos get-position
 	 val (brackets (comma-sep (fwd expr)))]
-    (return {:tok :list-lit :value val :pos pos})))
+    (return {:token :list-lit :value val :pos pos})))
 
 
 (def vector-lit
@@ -119,7 +121,7 @@ Literal values follow the rules of Java and Clojure."
   (<:> (bind [pos get-position
 	      val (>> (sym* \#)
 		      (brackets (comma-sep (fwd expr))))]
-         (return {:tok :vector-lit :value val :pos pos}))))     
+         (return {:token :vector-lit :value val :pos pos}))))     
 
 
 (def set-lit
@@ -127,14 +129,14 @@ Literal values follow the rules of Java and Clojure."
   (<:> (bind [pos get-position
 	      val (>> (sym* \#)
 		      (braces (comma-sep (fwd expr))))]
-         (return {:tok :set-lit :value val :pos pos}))))
+         (return {:token :set-lit :value val :pos pos}))))
 
 
 (def map-lit
   "Parses a map literal."
   (bind [pos get-position
 	 val (braces (comma-sep (fwd expr)))]
-    (return {:tok :map-lit :value val :pos pos})))
+    (return {:token :map-lit :value val :pos pos})))
 
 
 (def re-lit
@@ -142,7 +144,8 @@ Literal values follow the rules of Java and Clojure."
   (<:> (bind [pos get-position
 	      reg (>> (sym* \#) string-lit)]
          (let [val (str "#\"" (:value reg) "\"")]
-           (return {:tok :re-lit :value (read-string val) :pos pos})))))
+
+           (return {:token :re-lit :value (read-string val) :pos pos})))))
 
 
 (def factor
@@ -165,6 +168,14 @@ Literal values follow the rules of Java and Clojure."
        (parens (fwd expr))))
 
 
+(def uni-op (one-of "!-"))
+(def pow-op (sym \^))
+(def mul-op (one-of  "*/%"))
+(def add-op (one-of "+-"))
+(def rel-op (token "==" "!=" ">=" "<=" ">" "<"))
+(def and-op (token "&&"))
+(def or-op  (token "||"))
+
 (def unary  (prefix1* :UNIOP  factor uni-op))
 (def power  (chainr1* :BINOP  unary  pow-op))
 (def term   (chainl1* :BINOP  power  mul-op))
@@ -183,7 +194,7 @@ Literal values follow the rules of Java and Clojure."
 	 _     (sym \=)
 	 val   expr]
     (let [tok (if (seq parms) :defn :def)]
-      (return {:tok tok :name (:value name) :parms parms :value val}))))
+      (return {:token tok :name (:value name) :parms parms :value val}))))
 
 
 (def decls

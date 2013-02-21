@@ -38,7 +38,7 @@ Literal values follow the rules of Java and Clojure."
   (assoc lex/haskell-style
     :identifier-start   (<|> lower (sym* \_))
     :identifier-letter  (<|> alpha-num (sym* \_))
-    :reserved-names     ["def"]))
+    :reserved-names     ["_" "def"]))
 
 
 (def rec (lex/make-parsers eisen-style))
@@ -170,21 +170,31 @@ Literal values follow the rules of Java and Clojure."
        (parens (fwd expr))))
 
 
-(def uni-op (one-of "!-"))
-(def pow-op (sym \^))
-(def mul-op (<|> (>> (token "//") (lexer (return "quot"))) (one-of  "*/%")))
-(def add-op (one-of "+-"))
-(def rel-op (token "==" "!=" ">=" "<=" ">" "<"))
-(def or-op  (token "||"))
-(def and-op (token "&&"))
+(def pow-op  (token "**"))
+(def uni-op  (one-of "+-!~"))
+(def mul-op  (<|> (>> (sym \\) (lexer (return "quot"))) (one-of  "*/%")))
+(def add-op  (one-of "+-"))
+(def rel-op  (token ">=" "<=" ">" "<"))
+(def equ-op  (token "==" "!="))
+(def band-op (sym \&))
+(def bxor-op (sym \^))
+(def bor-op  (sym \|))
+(def and-op  (token "&&"))
+(def or-op   (token "||"))
+(def lst-op  (token ":" "++"))
 
-(def unary  (prefix1* :UNIOP  factor uni-op))
-(def power  (chainr1* :BINOP  unary  pow-op))
-(def term   (chainl1* :BINOP  power  mul-op))
+(def power  (chainr1* :BINOP  factor pow-op))
+(def unary  (prefix1* :UNIOP  power  uni-op))
+(def term   (chainl1* :BINOP  unary  mul-op))
 (def sum    (chainl1* :BINOP  term   add-op))
 (def relex  (chainl1* :BINOP  sum    rel-op))
-(def orex   (chainl1* :BINOP  relex  or-op))
-(def expr   (chainl1* :BINOP  orex   and-op))
+(def equ    (chainl1* :BINOP  relex  equ-op))
+(def band   (chainl1* :BINOP  equ    band-op))
+(def bxor   (chainl1* :BINOP  band   bxor-op))
+(def bor    (chainl1* :BINOP  bxor   bor-op))
+(def andex  (chainl1* :BINOP  bor    and-op))
+(def orop   (chainl1* :BINOP  andex  or-op))
+(def expr   (chainl1* :BINOP  orop   lst-op))
 
 
 (def decl

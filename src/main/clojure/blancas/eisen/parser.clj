@@ -40,7 +40,6 @@ Literal values follow the rules of Java and Clojure."
     :identifier-letter  (<|> alpha-num (sym* \_))
     :reserved-names     ["_" "def"]))
 
-
 (def rec (lex/make-parsers eisen-style))
 
 
@@ -146,7 +145,6 @@ Literal values follow the rules of Java and Clojure."
   (<:> (bind [pos get-position
 	      reg (>> (sym* \#) string-lit)]
          (let [val (str "#\"" (:value reg) "\"")]
-
            (return {:token :re-lit :value (read-string val) :pos pos})))))
 
 
@@ -260,18 +258,17 @@ Literal values follow the rules of Java and Clojure."
 (def expr   (chainl1* :BINOP  andex  or-op))
 
 
-(def decl
-  "Parses a declaration as a named value or funcion. The name should be
-   placed at the start of a line to ensure it denotes a declaration."
-  (bind [_     (word "def")
+(def def-decl
+  "Parses a declaration for a named value. var may also be used,
+   in which case it denotes a dynamic Var."
+  (bind [decl  (<|> (word "def") (word "var"))
 	 name  identifier
-	 parms (many identifier)
 	 _     (sym \=)
 	 val   expr]
-    (let [tok (if (seq parms) :defn :def)]
-      (return {:token tok :name (:value name) :parms parms :value val}))))
+    (let [tok (if (= (:value decl) "def") :def :var)]
+      (return {:token tok :name (:value name) :value val}))))
 
 
 (def decls
   "Parses one or more declarations or expressions."
-  (>> trim (many1 (<|> decl expr))))
+  (>> trim (many1 (<|> def-decl expr))))

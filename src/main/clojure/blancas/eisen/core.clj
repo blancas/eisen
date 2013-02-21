@@ -43,7 +43,8 @@
 
   (defn eisen
     "Translates the supplied Eisen code into Clojure and evaluates
-     the resulting forms. Returns a map with three fields:
+     the resulting forms. If given an expression, it will evaluate it
+     and return the result in the :value field. Returns a map with:
      :ok     true on success; false otherwise
      :value  the value of the last form
      :decls  a vector of Clojure forms

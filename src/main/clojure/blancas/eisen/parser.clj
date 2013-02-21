@@ -199,15 +199,11 @@ Literal values follow the rules of Java and Clojure."
        (>> (token "++") (lexer (return "concat")))))
 
 
-(def rel-op
-  "Relational operators."
-  (token ">=" "<=" ">" "<"))
-
-
-(def equ-op
-  "Equality operators; == denotes (=); != denotes not=."
-  (<|> (>> (token "==") (lexer (return "=")))
-       (>> (token "!=") (lexer (return "not=")))))
+(def shft-op
+  "Bitwise shift operators; << denotes (bit-shift-left);
+   >> denotes (bit-shift-right)."
+  (<|> (>> (token "<<") (lexer (return "bit-shift-left")))
+       (>> (token ">>") (lexer (return "bit-shift-right")))))
 
 
 (def band-op
@@ -223,6 +219,17 @@ Literal values follow the rules of Java and Clojure."
 (def bor-op
   "Opertor bitwise or."
   (>> (sym \|) (lexer (return "bit-or"))))
+
+
+(def rel-op
+  "Relational operators."
+  (token ">=" "<=" ">" "<"))
+
+
+(def equ-op
+  "Equality operators; == denotes (=); != denotes not=."
+  (<|> (>> (token "==") (lexer (return "=")))
+       (>> (token "!=") (lexer (return "not=")))))
 
 
 (def and-op
@@ -243,12 +250,13 @@ Literal values follow the rules of Java and Clojure."
 (def unary  (prefix1* :UNIOP  power  uni-op))
 (def term   (chainl1* :BINOP  unary  mul-op))
 (def sum    (chainl1* :BINOP  term   add-op))
-(def relex  (chainl1* :BINOP  sum    rel-op))
-(def equ    (chainl1* :BINOP  relex  equ-op))
-(def band   (chainl1* :BINOP  equ    band-op))
+(def shift  (chainl1* :BINOP  sum    shft-op))
+(def band   (chainl1* :BINOP  shift  band-op))
 (def bxor   (chainl1* :BINOP  band   bxor-op))
 (def bor    (chainl1* :BINOP  bxor   bor-op))
-(def andex  (chainl1* :BINOP  bor    and-op))
+(def relex  (chainl1* :BINOP  bor    rel-op))
+(def equ    (chainl1* :BINOP  relex  equ-op))
+(def andex  (chainl1* :BINOP  equ    and-op))
 (def expr   (chainl1* :BINOP  andex  or-op))
 
 

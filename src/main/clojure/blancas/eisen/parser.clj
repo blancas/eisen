@@ -170,18 +170,74 @@ Literal values follow the rules of Java and Clojure."
        (parens (fwd expr))))
 
 
-(def pow-op  (token "**"))
-(def uni-op  (one-of "+-!~"))
-(def mul-op  (<|> (>> (sym \\) (lexer (return "quot"))) (one-of  "*/%")))
-(def add-op  (one-of "+-"))
-(def rel-op  (token ">=" "<=" ">" "<"))
-(def equ-op  (token "==" "!="))
-(def band-op (sym \&))
-(def bxor-op (sym \^))
-(def bor-op  (sym \|))
-(def and-op  (token "&&"))
-(def or-op   (token "||"))
-(def lst-op  (token ":" "++"))
+(def pow-op
+  "Power-of operator; implemented as a custom funcion exp."
+  (>> (token "**") (lexer (return "exp"))))
+
+
+(def uni-op
+  "Unary operators not, bitwise not, plus, minus."
+  (<|> (>> (sym \!) (lexer (return "not")))
+       (>> (sym \~) (lexer (return "bit-not")))
+       (one-of  "+-")))
+
+
+(def mul-op
+  "Multiplicative operators; a backslash denotes (quot);
+   % denotes (mod); * denotes multiplication; and / denotes
+   both division and integer ratio."
+  (<|> (>> (sym \\) (lexer (return "quot")))
+       (>> (sym \%) (lexer (return "mod")))
+       (one-of  "*/")))
+
+
+(def add-op
+  "Additive operators plus and minus. For collections,
+   : denotes (conj) and ++ denotes (concat)."
+  (<|> (one-of "+-")
+       (>> (sym \:)     (lexer (return "conj")))     
+       (>> (token "++") (lexer (return "concat")))))
+
+
+(def rel-op
+  "Relational operators."
+  (token ">=" "<=" ">" "<"))
+
+
+(def equ-op
+  "Equality operators; == denotes (=); != denotes not=."
+  (<|> (>> (token "==") (lexer (return "=")))
+       (>> (token "!=") (lexer (return "not=")))))
+
+
+(def band-op
+  "Operator bitwise and."
+  (>> (sym \&) (lexer (return "bit-and"))))
+
+
+(def bxor-op
+  "Opertor bitwise xor."
+  (>> (sym \^) (lexer (return "bit-xor"))))
+
+
+(def bor-op
+  "Opertor bitwise or."
+  (>> (sym \|) (lexer (return "bit-or"))))
+
+
+(def and-op
+  "Operator logical and."
+  (>> (token "&&") (lexer (return "and"))))
+
+
+(def or-op
+  "Operator logical or."
+  (>> (token "||") (lexer (return "or"))))
+
+
+;;
+;; Operator chaining, from highest to lowest precedence.
+;;
 
 (def power  (chainr1* :BINOP  factor pow-op))
 (def unary  (prefix1* :UNIOP  power  uni-op))
@@ -193,8 +249,7 @@ Literal values follow the rules of Java and Clojure."
 (def bxor   (chainl1* :BINOP  band   bxor-op))
 (def bor    (chainl1* :BINOP  bxor   bor-op))
 (def andex  (chainl1* :BINOP  bor    and-op))
-(def orop   (chainl1* :BINOP  andex  or-op))
-(def expr   (chainl1* :BINOP  orop   lst-op))
+(def expr   (chainl1* :BINOP  andex  or-op))
 
 
 (def decl

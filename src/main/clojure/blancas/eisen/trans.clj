@@ -91,9 +91,9 @@
 (defn trans-ast
   "Translates a collection of AST maps into unevaluated Clojure forms."
   [ast]
-  (cond (= (:token ast) :def)  (trans-def ast)
-	(= (:token ast) :defn) (trans-defn ast)
-	:else                  (trans-expr ast)))
+  (cond (= (:token ast) :val) (trans-def ast)
+	(= (:token ast) :fun) (trans-defn ast)
+	:else                 (trans-expr ast)))
 
 
 (defn trans

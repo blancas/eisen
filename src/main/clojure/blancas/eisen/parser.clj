@@ -38,7 +38,7 @@ Literal values follow the rules of Java and Clojure."
   (assoc lex/haskell-style
     :identifier-start   (<|> lower (sym* \_))
     :identifier-letter  (<|> alpha-num (sym* \_))
-    :reserved-names     ["_" "def"]))
+    :reserved-names     ["_" "val" "fun"]))
 
 (def rec (lex/make-parsers eisen-style))
 
@@ -259,16 +259,25 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def def-decl
-  "Parses a declaration for a named value. var may also be used,
-   in which case it denotes a dynamic Var."
-  (bind [decl  (<|> (word "def") (word "var"))
+  "Parses a declaration for a named value."
+  (>> (word "val")
+      (semi-sep1
+        (bind [name identifier  _ (sym \=)  val expr]
+          (return {:token :val :name (:value name) :value val})))))
+
+
+(def fun-decl
+  "Parses a function definition."
+  (bind [_     (word "fun")
 	 name  identifier
+	 parm  (many identifier)
 	 _     (sym \=)
 	 val   expr]
-    (let [tok (if (= (:value decl) "def") :def :var)]
-      (return {:token tok :name (:value name) :value val}))))
+    (return {:token :fun :name (:value name) :params parm :value val})))
 
 
-(def decls
+(def eisen-code
   "Parses one or more declarations or expressions."
-  (>> trim (many1 (<|> def-decl expr))))
+  (>> trim
+      (<|> (<$> flatten (many1 (<|> def-decl fun-decl)))
+	   (<$> vector expr))))

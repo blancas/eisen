@@ -9,7 +9,7 @@
 (ns ^{:doc "Main module of the Eisen translator."
       :author "Armando Blancas"}
   blancas.eisen.core
-  (:use [blancas.eisen.parser :only (decls)]
+  (:use [blancas.eisen.parser :only (eisen-code)]
 	[blancas.eisen.trans :only (trans)]
         [blancas.kern.core :only (parse run print-error f->s)]))
 
@@ -20,7 +20,7 @@
   ([text]
    (parse-eisen text ""))
   ([text source]
-   (let [st (parse decls text source)]
+   (let [st (parse eisen-code text source)]
      (if (:ok st)
        {:ok true :decls (:value st)}
        {:ok false :error (with-out-str (print-error st))}))))
@@ -66,7 +66,7 @@
   "Parses the supplied Eisen code as a dry run; discards the parsed results.
    Any errors are printed to stdout; intended for testing at the REPL."
   ([text] (eisen* text ""))
-  ([text source] (run decls text source)))
+  ([text source] (run eisen-code text source)))
 
 
 (defn eisenf

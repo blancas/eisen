@@ -190,11 +190,18 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def add-op
-  "Additive operators plus and minus. For collections,
-   : denotes (conj) and ++ denotes (concat)."
-  (<|> (one-of "+-")
-       (>> (sym \:)     (lexer (return "conj")))     
-       (>> (token "++") (lexer (return "concat")))))
+  "Additive operators plus and minus."
+  (one-of "+-"))
+
+
+(def cons-op
+  "List construction operator."
+  (>> (sym \:) (lexer (return "blancas.eisen.trans/conj-rev"))))
+
+
+(def lcat-op
+  "List concatenation operator."
+  (>> (token "++") (lexer (return "concat"))))
 
 
 (def shft-op
@@ -248,7 +255,9 @@ Literal values follow the rules of Java and Clojure."
 (def unary  (prefix1* :UNIOP  power  uni-op))
 (def term   (chainl1* :BINOP  unary  mul-op))
 (def sum    (chainl1* :BINOP  term   add-op))
-(def shift  (chainl1* :BINOP  sum    shft-op))
+(def const  (chainr1* :BINOP  sum    cons-op))
+(def cat    (chainl1* :BINOP  const  lcat-op))
+(def shift  (chainl1* :BINOP  cat    shft-op))
 (def band   (chainl1* :BINOP  shift  band-op))
 (def bxor   (chainl1* :BINOP  band   bxor-op))
 (def bor    (chainl1* :BINOP  bxor   bor-op))

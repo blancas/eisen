@@ -18,6 +18,11 @@
   (reduce * (repeat n x)))
 
 
+(defn conj-rev
+  "A version of conj with the arguments reversed."
+  [x coll] (conj coll x))
+
+
 (declare trans-expr trans-ast trans)
 
 
@@ -115,6 +120,8 @@
 (defn trans
   "Translates a collection of AST maps into unevaluated Clojure forms."
   [coll]
-  (either [res (monad [v (seqm (map trans-ast coll))] (right v))]
-    {:ok false :error res}
-    {:ok true :decls res}))
+  (if (empty? coll)
+    {:ok true :decls ()}
+    (either [res (monad [v (seqm (map trans-ast coll))] (right v))]
+      {:ok false :error res}
+      {:ok true :decls res})))

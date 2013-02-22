@@ -33,3 +33,95 @@
       (:value p1)) => true
     (let [p1 (eisen "!!true")]
       (:value p1)) => true))
+
+
+(deftest test-0010
+  (fact "bitwise not"
+    (let [p1 (eisen "~0xF0F0F0F0 & 0xFFFFFFFF")]
+      (:value p1)) => 0xF0F0F0F))
+
+
+(deftest test-0015
+  (fact "unary plus"
+    (let [p1 (eisen "+500")]
+      (:value p1)) => 500))
+
+
+(deftest test-0020
+  (fact "unary minus"
+    (let [p1 (eisen "-500")]
+      (:value p1)) => -500))
+
+
+(deftest test-0025
+  (fact "integer division -- quot"
+    (let [p1 (eisen "11 \\ 3")]
+      (:value p1)) => 3))
+
+
+(deftest test-0030
+  (fact "modulo -- mod"
+    (let [p1 (eisen "11 % 3")]
+      (:value p1)) => 2))
+
+
+(deftest test-0035
+  (fact "multiplication"
+    (let [p1 (eisen "11 * 3")]
+      (:value p1)) => 33
+    (let [p1 (eisen "11.0 * 3")]
+      (:value p1)) => 33.0
+    (let [p1 (eisen "6 * (1 /3)")]
+      (:value p1)) => 2))
+
+
+(deftest test-0040
+  (fact "division with floating-point numbers"
+    (let [p1 (eisen "5.0 / 2.0")]
+      (:value p1)) => 2.5
+    (let [p1 (eisen "5.0 / 2")]
+      (:value p1)) => 2.5
+    (let [p1 (eisen "5 / 2.0")]
+      (:value p1)) => 2.5))
+
+
+(deftest test-0045
+  (fact "ratio with integer numbers"
+    (let [p1 (eisen "11 / 3")]
+      (:value p1)) => (/ 11 3)))
+
+
+(deftest test-0050
+  (fact "addition"
+    (let [p1 (eisen "3 + 4")]
+      (:value p1)) => 7
+    (let [p1 (eisen "11.0 + 3.0")]
+      (:value p1)) => 14.0
+    (let [p1 (eisen "3 / 4 + 2 / 8")]
+      (:value p1)) => 1))
+
+
+(deftest test-0055
+  (fact "subtraction"
+    (let [p1 (eisen "10 - 4")]
+      (:value p1)) => 6
+    (let [p1 (eisen "4 - 10")]
+      (:value p1)) => -6
+    (let [p1 (eisen "4 - -10")]
+      (:value p1)) => 14
+    (let [p1 (eisen "11.0 - 3.0")]
+      (:value p1)) => 8.0
+    (let [p1 (eisen "3 / 4 - 2 / 8")]
+      (:value p1)) => (/ 1 2)))
+
+
+(deftest test-0055
+  (fact "construct (:) -- flip conj"
+    (let [p1 (eisen "0 : [1,2,3]")]
+      (:value p1)) => '(0 1 2 3)
+    (let [p1 (eisen "0:[1,2,3]")]
+      (:value p1)) => '(0 1 2 3)
+    (let [p1 (eisen "0 : 1 : 2 : 3 : []")]
+      (:value p1)) => '(0 1 2 3)
+    (let [p1 (eisen "0:1:2:3:[]")]
+      (:value p1)) => '(0 1 2 3)))

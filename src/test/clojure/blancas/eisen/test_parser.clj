@@ -126,31 +126,31 @@
 
 (deftest test-0100
   (fact "List literal"
-    (let [p1 (trans-eisen "[]")]
-      (-> p1 :decls first eval)) => ()
-    (let [p1 (trans-eisen "[737, 747, 757, 767, 777, 787]")]
-      (-> p1 :decls first eval)) => '(737 747 757 767 777 787)))
+    (let [p1 (eisen "[]")]
+      (:value p1)) => ()
+    (let [p1 (eisen "[737, 747, 757, 767, 777, 787]")]
+      (:value p1)) => '(737 747 757 767 777 787)))
 
 
 (deftest test-0105
   (fact "Vector literal"
-    (let [p1 (trans-eisen "#[]")]
-      (-> p1 :decls first eval)) => []
-    (let [p1 (trans-eisen "#[737, 747, 757, 767, 777, 787]")]
-      (-> p1 :decls first eval)) => [737 747 757 767 777 787]))
+    (let [p1 (eisen "#[]")]
+      (:value p1)) => []
+    (let [p1 (eisen "#[737, 747, 757, 767, 777, 787]")]
+      (:value p1)) => [737 747 757 767 777 787]))
 
 
 (deftest test-0110
   (fact "Set literal"
-    (let [p1 (trans-eisen "#{}")]
-      (-> p1 :decls first eval)) => #{}
-    (let [p1 (trans-eisen "#{737, 747, 757, 767, 777, 787}")]
-      (-> p1 :decls first eval)) => #{737 747 757 767 777 787}))
+    (let [p1 (eisen "#{}")]
+      (:value p1)) => #{}
+    (let [p1 (eisen "#{737, 747, 757, 767, 777, 787}")]
+      (:value p1)) => #{737 747 757 767 777 787}))
 
 
 (deftest test-0115
   (fact "Map literal"
-    (let [p1 (trans-eisen "{}")]
-      (-> p1 :decls first eval)) => {}
-    (let [p1 (trans-eisen "{:k1, 737, :k2, 747, :k3, 757, :k4, 767, :k5, 777, :k6, 787}")]
-      (-> p1 :decls first eval)) => {:k1 737 :k2 747 :k3 757 :k4 767 :k5 777 :k6 787}))
+    (let [p1 (eisen "{}")]
+      (:value p1)) => {}
+    (let [p1 (eisen "{:k1, 737, :k2, 747, :k3, 757, :k4, 767, :k5, 777, :k6, 787}")]
+      (:value p1)) => {:k1 737 :k2 747 :k3 757 :k4 767 :k5 777 :k6 787}))

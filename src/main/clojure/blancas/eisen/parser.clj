@@ -170,7 +170,7 @@ Literal values follow the rules of Java and Clojure."
 
 (def pow-op
   "Power-of operator; implemented as a custom funcion exp."
-  (>> (token "**") (lexer (return "exp"))))
+  (>> (token "**") (lexer (return "blancas.eisen.trans/exp"))))
 
 
 (def uni-op

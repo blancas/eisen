@@ -12,7 +12,12 @@
   (:use [blancas.morph.core :only (monad seqm)]
 	[blancas.morph.monads :only (left right either)]))
 
-  
+
+(defn exp [x n]
+  "Implements the power-of (**) operator."
+  (reduce * (repeat n x)))
+
+
 (declare trans-expr trans-ast trans)
 
 
@@ -36,6 +41,14 @@
 	  y (trans-ast (:right ast))]
     (let [f (-> ast :op :value str symbol)]
       (right `(~f ~x ~y)))))
+
+
+(defn trans-uniop
+  "Translates the application of a unary operator."
+  [ast]
+  (monad [y (trans-ast (:right ast))]
+    (let [f (-> ast :op :value str symbol)]
+      (right `(~f ~y)))))
 
 
 (defn trans-expr
@@ -85,7 +98,10 @@
 	  (left (:error vals))))
 
     :BINOP
-      (trans-binop ast)))
+      (trans-binop ast)
+
+    :UNIOP
+      (trans-uniop ast)))
 
 
 (defn trans-ast

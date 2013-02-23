@@ -130,4 +130,122 @@
 (deftest test-0100
   (fact "concat (++)"
     (let [p1 (eisen "[0,1,2] ++ [3,4,5]")]
+      (:value p1)) => '(0 1 2 3 4 5)
+    (let [p1 (eisen "[0,1,2] ++ [3,4,5] ++ [6,7,8]")]
+      (:value p1)) => '(0 1 2 3 4 5 6 7 8)
+    (let [p1 (eisen "0:[1,2] ++ 3:[4,5]")]
       (:value p1)) => '(0 1 2 3 4 5)))
+
+
+(deftest test-0120
+  (fact "shift left"
+    (let [p1 (eisen "2 << 8")]
+      (:value p1)) => 512
+    (let [p1 (eisen "0x0F << 4")]
+      (:value p1)) => 0xF0))
+
+
+(deftest test-0130
+  (fact "shift right"
+    (let [p1 (eisen "512 >> 8")]
+      (:value p1)) => 2
+    (let [p1 (eisen "0xF0 >> 4")]
+      (:value p1)) => 0x0F))
+
+
+(deftest test-0140
+  (fact "bit and"
+    (let [p1 (eisen "4 & 8")]
+      (:value p1)) => 0
+    (let [p1 (eisen "0xCAFE45 & 0x0000FF")]
+      (:value p1)) => 0x45
+    (let [p1 (eisen "0xCAFE45 & 0xFFFF00")]
+      (:value p1)) => 0xCAFE00))
+
+
+
+
+(deftest test-0150
+  (fact "bit xor"
+    (let [p1 (eisen "4 ^ 8")]
+      (:value p1)) => 12
+    (let [p1 (eisen "12 ^ 10")]
+      (:value p1)) => 6
+    (let [p1 (eisen "0xCAFE ^ 0xBABE")]
+      (:value p1)) => 0x7040
+    (let [p1 (eisen "0xf03 ^ 0xf0c")]
+      (:value p1)) => 0xf))
+
+
+(deftest test-0160
+  (fact "bit or"
+    (let [p1 (eisen "4 | 8")]
+      (:value p1)) => 12
+    (let [p1 (eisen "0xCAFE00 | 0x000045")]
+      (:value p1)) => 0xCAFE45
+    (let [p1 (eisen "0x000045 | 0xCAFE00 ")]
+      (:value p1)) => 0xCAFE45))
+
+
+(deftest test-0170
+  (fact "relational operators"
+    (let [p1 (eisen "512 > 8")]
+      (:value p1)) => true
+    (let [p1 (eisen "8 > 512")]
+      (:value p1)) => false
+    (let [p1 (eisen "0xF0 < 4")]
+      (:value p1)) => false
+    (let [p1 (eisen "4 < 0xf0")]
+      (:value p1)) => true
+    (let [p1 (eisen "512 >= 8")]
+      (:value p1)) => true
+    (let [p1 (eisen "512 >= 512")]
+      (:value p1)) => true
+    (let [p1 (eisen "0xF0 <= 0xFF")]
+      (:value p1)) => true
+    (let [p1 (eisen "0xF0 <= 0xF0")]
+      (:value p1)) => true
+    (let [p1 (eisen "0xF0 <= 4")]
+      (:value p1)) => false))
+
+
+(deftest test-0180
+  (fact "equality operators"
+    (let [p1 (eisen "512 == 8")]
+      (:value p1)) => false
+    (let [p1 (eisen "512 == 512")]
+      (:value p1)) => true
+    (let [p1 (eisen "512 != 8")]
+      (:value p1)) => true
+    (let [p1 (eisen "512 != 512")]
+      (:value p1)) => false
+    (let [p1 (eisen "true == true")]
+      (:value p1)) => true
+    (let [p1 (eisen "false == false")]
+      (:value p1)) => true
+    (let [p1 (eisen "true != true")]
+      (:value p1)) => false
+    (let [p1 (eisen "true != false")]
+      (:value p1)) => true))
+
+
+(deftest test-0190
+  (fact "logical and"
+    (let [p1 (eisen "512 > 8 && 5 < 10")]
+      (:value p1)) => true
+    (let [p1 (eisen "512 == 0 && 5 < 10")]
+      (:value p1)) => false
+    (let [p1 (eisen "512 > 0 && 50 < 10")]
+      (:value p1)) => false))
+
+
+(deftest test-0200
+  (fact "logical or"
+    (let [p1 (eisen "512 > 8 || 5 < 10")]
+      (:value p1)) => true
+    (let [p1 (eisen "512 == 0 || 5 < 10")]
+      (:value p1)) => true
+    (let [p1 (eisen "512 > 0 || 50 < 10")]
+      (:value p1)) => true
+    (let [p1 (eisen "512 < 0 || 50 < 10")]
+      (:value p1)) => false))

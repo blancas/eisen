@@ -214,7 +214,7 @@ Literal values follow the rules of Java and Clojure."
 
 (def band-op
   "Operator bitwise and."
-  (>> (sym \&) (lexer (return "bit-and"))))
+  (<:> (>> (sym* \&) (not-followed-by (sym* \&)) trim (lexer (return "bit-and")))))
 
 
 (def bxor-op
@@ -224,7 +224,7 @@ Literal values follow the rules of Java and Clojure."
 
 (def bor-op
   "Opertor bitwise or."
-  (>> (sym \|) (lexer (return "bit-or"))))
+  (<:> (>> (sym* \|) (not-followed-by (sym* \|)) trim (lexer (return "bit-or")))))
 
 
 (def rel-op

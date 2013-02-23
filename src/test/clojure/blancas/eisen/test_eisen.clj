@@ -125,3 +125,9 @@
       (:value p1)) => '(0 1 2 3)
     (let [p1 (eisen "0:1:2:3:[]")]
       (:value p1)) => '(0 1 2 3)))
+
+
+(deftest test-0100
+  (fact "concat (++)"
+    (let [p1 (eisen "[0,1,2] ++ [3,4,5]")]
+      (:value p1)) => '(0 1 2 3 4 5)))

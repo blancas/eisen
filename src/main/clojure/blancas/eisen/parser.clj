@@ -191,7 +191,8 @@ Literal values follow the rules of Java and Clojure."
 
 (def add-op
   "Additive operators plus and minus."
-  (one-of "+-"))
+  (<|> (sym \-)
+       (<:> (<< (sym \+) (not-followed-by (sym \+))))))
 
 
 (def cons-op

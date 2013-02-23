@@ -15,8 +15,7 @@
 
 
 (defn parse-eisen
-  "Parses the supplied text; returns a sequence objects to translate,
-   each either a top-level declaration or expression."
+  "Parses the supplied Eisen code; returns an abstract syntax tree."
   ([text]
    (parse-eisen text ""))
   ([text source]
@@ -26,40 +25,19 @@
        {:ok false :error (with-out-str (print-error st))}))))
   
 
-(defn trans-eisen
-  "Translates the supplied Eisen code into unevaluated Clojure code.
-   Returns a map with three fields:
+(defn eisen
+  "Translates the supplied Eisen code into Clojure and evaluates
+   the resulting forms. If given an expression, it will evaluate it
+   and return the result in the :value field. Returns a map with:
    :ok     true on success; false otherwise
-   :decls  a vector of Clojure forms
-   :error  error or warning message; not nil if :ok is false"
-  ([text]
-   (trans-eisen text ""))
-  ([text source]
-   (let [ast (parse-eisen text source)]
-     (if (:ok ast)
-       (trans (:decls ast))
-       ast))))
-
-
-  (defn eisen
-    "Translates the supplied Eisen code into Clojure and evaluates
-     the resulting forms. If given an expression, it will evaluate it
-     and return the result in the :value field. Returns a map with:
-     :ok     true on success; false otherwise
-     :value  the value of the last form
-     :decls  a vector of Clojure forms
-     :error  error or warning message; not nil if :ok is false"
+   :value  if ok, the value of the last form
+   :decls  if ok, a vector of Clojure forms
+   :error  if not ok, the error or warning message"
   ([text]
    (eisen text ""))
   ([text source]
    (let [ast (parse-eisen text source)]
-     (if (:ok ast)
-       (let [code (trans (:decls ast))]
-	 (if (:ok code)
-	   (let [vals (map eval (:decls code))]
-	     (assoc code :value (last vals)))
-	   code))
-       ast))))
+     (if (:ok ast) (trans (:decls ast)) ast))))
 
 
 (defn eisen*

@@ -23,7 +23,7 @@
   [x coll] (conj coll x))
 
 
-(declare trans-expr trans-ast trans)
+(declare trans-expr trans-exprs)
 
 
 (defn trans-def
@@ -42,8 +42,8 @@
 (defn trans-binop
   "Translates the application of a binary operator."
   [ast]
-  (monad [x (trans-ast (:left ast))
-	  y (trans-ast (:right ast))]
+  (monad [x (trans-expr (:left ast))
+	  y (trans-expr (:right ast))]
     (let [f (-> ast :op :value str symbol)]
       (right `(~f ~x ~y)))))
 
@@ -51,7 +51,7 @@
 (defn trans-uniop
   "Translates the application of a unary operator."
   [ast]
-  (monad [y (trans-ast (:right ast))]
+  (monad [y (trans-expr (:right ast))]
     (let [f (-> ast :op :value str symbol)]
       (right `(~f ~y)))))
 
@@ -79,25 +79,25 @@
       (right (:value ast))
 
     :list-lit
-      (let [vals (trans (:value ast))]
+      (let [vals (trans-exprs (:value ast))]
         (if (:ok vals)
           (right `(list ~@(:decls vals)))
 	  (left (:error vals))))
 
     :vector-lit
-      (let [vals (trans (:value ast))]
+      (let [vals (trans-exprs (:value ast))]
         (if (:ok vals)
           (right (:decls vals))
 	  (left (:error vals))))
 
     :set-lit
-      (let [vals (trans (:value ast))]
+      (let [vals (trans-exprs (:value ast))]
         (if (:ok vals)
           (right (set (:decls vals)))
 	  (left (:error vals))))
 
     :map-lit
-      (let [vals (trans (:value ast))]
+      (let [vals (trans-exprs (:value ast))]
         (if (:ok vals)
           (right (apply hash-map (:decls vals)))
 	  (left (:error vals))))
@@ -109,6 +109,16 @@
       (trans-uniop ast)))
 
 
+(defn trans-exprs
+  "Translates a collection of ASTs into Clojure expressions."
+  [coll]
+  (if (empty? coll)
+    {:ok true :decls ()}
+    (either [res (monad [v (seqm (map trans-expr coll))] (right v))]
+      {:ok false :error res}
+      {:ok true :decls res})))
+
+
 (defn trans-ast
   "Translates a collection of AST maps into unevaluated Clojure forms."
   [ast]
@@ -117,11 +127,22 @@
 	:else                 (trans-expr ast)))
 
 
+(defn eval-ast
+  "Translates and evaluates an AST; returns a vector with the
+   generated code and the result of the evaluation."
+  [ast]
+  (either [code (trans-ast ast)]
+    (right [code (eval code)])))
+
+
 (defn trans
-  "Translates a collection of AST maps into unevaluated Clojure forms."
+  "Translates and evaluates a collection of top-level ASTs.
+   Returns a map with the following fields:
+   :ok     true on success; false otherwise
+   :value  if ok, the value of the last form
+   :decls  if ok, a vector of Clojure forms
+   :error  if not ok, the error or warning message"
   [coll]
-  (if (empty? coll)
-    {:ok true :decls ()}
-    (either [res (monad [v (seqm (map trans-ast coll))] (right v))]
-      {:ok false :error res}
-      {:ok true :decls res})))
+  (either [res (monad [v (seqm (map eval-ast coll))] (right v))]
+    {:ok false :error res}
+    {:ok true :decls (map first res) :value (-> res last second)}))

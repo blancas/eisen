@@ -13,6 +13,17 @@
 	[blancas.morph.monads :only (left right either)]))
 
 
+(defn error
+  "Composes an error message."
+  [pos fmt & more]
+  (let [row (:line pos)
+	col (:col pos)
+	loc (if (empty? (:src pos))
+	      (format "line %d, column %d\n" row col)
+	      (format "%s: line %d, column %d\n" (:src pos) row col))]
+    (str loc (apply format fmt more))))
+
+	
 (defn exp [x n]
   "Implements the power-of (**) operator."
   (reduce * (repeat n x)))
@@ -61,7 +72,6 @@
   [ast]
   (case (:token ast)
     (:new-line
-     :identifier
      :char-lit
      :string-lit
      :dec-lit
@@ -77,6 +87,13 @@
      :keyword
      :re-lit)
       (right (:value ast))
+
+    :identifier
+      (let [n (:value ast)
+	    s (symbol n)]
+        (if-not (-> s resolve var-get fn?)
+          (right s)
+	  (left (error (:pos ast) "%s is a function" n))))
 
     :list-lit
       (let [vals (trans-exprs (:value ast))]
@@ -131,7 +148,7 @@
   "Translates and evaluates an AST; returns a vector with the
    generated code and the result of the evaluation."
   [ast]
-  (either [code (trans-ast ast)]
+  (monad [code (trans-ast ast)]
     (right [code (eval code)])))
 
 

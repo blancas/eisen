@@ -148,6 +148,33 @@ Literal values follow the rules of Java and Clojure."
            (return {:token :re-lit :value (read-string val) :pos pos})))))
 
 
+(def argument
+  "An argument to a function call; this does not include a function call
+   directly, but only through an expression in parenthesis."
+  (<|> key-name
+       char-lit
+       string-lit
+       dec-lit
+       oct-lit
+       hex-lit
+       float-lit
+       bool-lit
+       nil-lit
+       list-lit
+       vector-lit
+       set-lit
+       map-lit
+       re-lit
+       identifier
+       (parens (fwd expr))))
+
+
+(def val-call
+  "Parses a reference to a value or a function call."
+  (bind [name identifier args (many argument)]
+    (return {:token :val-call :value (into [name] args)})))
+
+
 (def factor
   "A factor is an operand within an expression."
   (<|> key-name
@@ -159,12 +186,12 @@ Literal values follow the rules of Java and Clojure."
        float-lit
        bool-lit
        nil-lit
-       identifier
        list-lit
        vector-lit
        set-lit
        map-lit
        re-lit
+       val-call
        (parens (fwd expr))))
 
 

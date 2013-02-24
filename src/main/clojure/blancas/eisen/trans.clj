@@ -23,7 +23,12 @@
 	      (format "%s: line %d, column %d\n" (:src pos) row col))]
     (str loc (apply format fmt more))))
 
-	
+
+(defn function?
+  "Tests if the symbol is a function or macro."
+  [s] (-> s resolve var-get fn?))
+
+
 (defn exp [x n]
   "Implements the power-of (**) operator."
   (reduce * (repeat n x)))
@@ -50,6 +55,19 @@
   [ast] nil)
 
 
+(defn val-call
+  "Translates a constant or a function call."
+  [name args]
+  (let [sym-name (-> name :value symbol)]
+    (if (zero? (count args))
+      (if (function? sym-name)
+	(right `(~sym-name))
+	(right sym-name))
+      (if (function? sym-name)
+	(right `(~sym-name))
+	(left (error (:pos name) "%s is not a function" (:value name)))))))
+
+  
 (defn trans-binop
   "Translates the application of a binary operator."
   [ast]
@@ -89,11 +107,11 @@
       (right (:value ast))
 
     :identifier
-      (let [n (:value ast)
-	    s (symbol n)]
-        (if-not (-> s resolve var-get fn?)
-          (right s)
-	  (left (error (:pos ast) "%s is a function" n))))
+      (-> ast :value symbol)
+
+    :val-call
+      (let [val (:value ast)]
+        (val-call (first val) (rest val)))
 
     :list-lit
       (let [vals (trans-exprs (:value ast))]

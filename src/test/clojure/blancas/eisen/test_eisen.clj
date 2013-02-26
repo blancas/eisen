@@ -249,3 +249,101 @@
       (:value p1)) => true
     (let [p1 (eisen "512 < 0 || 50 < 10")]
       (:value p1)) => false))
+
+
+;; +-------------------------------------------------------------+
+;; |                    Operators precedence.                    |
+;; +-------------------------------------------------------------+
+
+
+(deftest test-0400
+  (fact "precedence"
+    (let [p1 (eisen "~2**8")]
+      (:value p1)) => -257
+    (let [p1 (eisen "5 * 20 \\ 4")]
+      (:value p1)) => 25
+    (let [p1 (eisen "3 * 8 % 5 + 1")]
+      (:value p1)) => 5
+    (let [p1 (eisen "3 * 8 - 4 * 4 + 2 ** 3")]
+      (:value p1)) => 16
+    (let [p1 (eisen "256 >> 3 + 2")]
+      (:value p1)) => 8
+    (let [p1 (eisen "4 | 8 > 10")]
+      (:value p1)) => true
+    (let [p1 (eisen "4 | 8 > 10 && 100 == 50 + 50")]
+      (:value p1)) => true
+    (let [p1 (eisen "4 | 8 > 100 && 100 == 50 + 50 || 1 << 8 > 0xFF")]
+      (:value p1)) => true))
+
+
+;; +-------------------------------------------------------------+
+;; |                      Declaring values.                      |
+;; +-------------------------------------------------------------+
+
+
+(deftest test-0500
+  (fact "declare a value"
+    (let [_ (eisen "val v1 = 99")]
+      (eisen= "v1")) => 99
+    (let [_ (eisen "val v2 = false")]
+      (eisen= "v2")) => false
+    (let [_ (eisen "val v3 = 'z'")]
+      (eisen= "v3")) => \z
+    (let [_ (eisen "val v4 = 3.1415927")]
+      (eisen= "v4")) => 3.1415927
+    (let [_ (eisen "val v5 = [1,2,3,4,5]")]
+      (eisen= "v5")) => '(1 2 3 4 5)
+    (let [_ (eisen "val v6 = #[1,2,3,4,5]")]
+      (eisen= "v6")) => [1 2 3 4 5]
+    (let [_ (eisen "val v7 = #[10,25] ++ [30,45]")]
+      (eisen= "v7")) => [10 25 30 45]
+    (let [_ (eisen "val v8 = #{1,2,3,4,5}")]
+      (eisen= "v8")) => #{1 2 3 4 5}
+    (let [_ (eisen "val v9 = map inc #[0,2,4,6,8]")]
+      (eisen= "v9")) => [1,3,5,7,9]))
+
+
+(deftest test-0505
+  (fact "declare multiple values"
+    (let [_ (eisen "val v1 = 99\nval v2 = 0\nval v3 = -1")]
+      (eisen= "[v1,v2,v3]")) => [99 0 -1]
+    (let [_ (eisen "val v1 = 99; v2 = 0; v3 = -1")]
+      (eisen= "[v1,v2,v3]")) => [99 0 -1]
+    (let [_ (eisen "val\n    v1 = 99;\n    v2 = 0;\n    v3 = -1")]
+      (eisen= "[v1,v2,v3]")) => [99 0 -1]))
+
+
+;; +-------------------------------------------------------------+
+;; |                    References to values.                    |
+;; +-------------------------------------------------------------+
+
+
+(deftest test-0600
+  (fact "referencing values"
+    (let [_ (eisen "val v1 = 12; v2 = 10")]
+      (eisen= "v1+v2")) => 22
+    (let [_ (eisen "val v3 = 12; v4 = 10")]
+      (eisen= "v3 * v4")) => 120
+    (let [_ (eisen "val v5 = 12; v6 = 10")]
+      (eisen= "v5 % v6")) => 2
+    (let [_ (eisen "val v7 = 12; v8 = 10")]
+      (eisen= "v8 / v7")) => (/ 10 12)
+    (let [_ (eisen "val v9 = 12; v10 = 10")]
+      (eisen= "v9 + v10 + v9 * v10")) => 142))
+
+
+;; +-------------------------------------------------------------+
+;; |                     Calling functions.                      |
+;; +-------------------------------------------------------------+
+
+
+(deftest test-0700
+  (fact "calling functions"
+    (eisen= "inc 10") => 11
+    (eisen= "map inc [1,2,3,4,5]") => '(2 3 4 5 6)
+    (eisen= "range 250 260 2") => '(250 252 254 256 258)
+    (eisen= "take 5 (range 50 60)") => '(50 51 52 53 54))
+  (fact "calling a function on a declared value"
+    (let [_ (eisen "val foo = 5005")]
+      (eisen= "inc foo")) => 5006))
+

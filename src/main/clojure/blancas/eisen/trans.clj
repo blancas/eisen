@@ -90,69 +90,39 @@
   "Translates an AST into a Clojure expression."
   [ast]
   (case (:token ast)
-    (:new-line
-     :char-lit
-     :string-lit
-     :dec-lit
-     :oct-lit
-     :hex-lit
-     :float-lit
-     :bool-lit
-     :nil-lit
-     :semi
-     :comma
-     :colon
-     :dot
-     :keyword
-     :re-lit)
-      (right (:value ast))
+    (:new-line :char-lit  :string-lit :dec-lit  :oct-lit
+     :hex-lit  :float-lit :bool-lit   :nil-lit  :semi
+     :comma    :colon     :dot        :keyword  :re-lit)
+                 (right (:value ast))
 
-    :identifier
-      (right (-> ast :value symbol))
+    :identifier  (right (-> ast :value symbol))
 
-    :val-call
-      (let [val (:value ast)]
-        (val-call (first val) (rest val)))
+    :val-call    (let [val (:value ast)]
+                   (val-call (first val) (rest val)))
 
-    :list-lit
-      (let [vals (trans-exprs (:value ast))]
-        (if (:ok vals)
-          (right `(list ~@(:decls vals)))
-	  (left (:error vals))))
+    :list-lit    (monad [vals (trans-exprs (:value ast))]
+                   (right `(list ~@vals)))
 
-    :vector-lit
-      (let [vals (trans-exprs (:value ast))]
-        (if (:ok vals)
-          (right (:decls vals))
-	  (left (:error vals))))
+    :vector-lit  (monad [vals (trans-exprs (:value ast))]
+                   (right vals))
 
-    :set-lit
-      (let [vals (trans-exprs (:value ast))]
-        (if (:ok vals)
-          (right (set (:decls vals)))
-	  (left (:error vals))))
+    :set-lit     (monad [vals (trans-exprs (:value ast))]
+                   (right (set vals)))
 
-    :map-lit
-      (let [vals (trans-exprs (:value ast))]
-        (if (:ok vals)
-          (right (apply hash-map (:decls vals)))
-	  (left (:error vals))))
+    :map-lit     (monad [vals (trans-exprs (:value ast))]
+                   (right (apply hash-map vals)))
 
-    :BINOP
-      (trans-binop ast)
+    :BINOP       (trans-binop ast)
 
-    :UNIOP
-      (trans-uniop ast)))
+    :UNIOP       (trans-uniop ast)))
 
 
 (defn trans-exprs
   "Translates a collection of ASTs into Clojure expressions."
   [coll]
-  (if (empty? coll)
-    {:ok true :decls ()}
-    (either [res (monad [v (seqm (map trans-expr coll))] (right v))]
-      {:ok false :error res}
-      {:ok true :decls res})))
+  (if (seq coll)
+    (monad [v (seqm (map trans-expr coll))] (right v))
+    (right ())))
 
 
 (defn trans-ast

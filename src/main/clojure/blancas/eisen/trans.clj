@@ -64,7 +64,8 @@
 	(right `(~sym-name))
 	(right sym-name))
       (if (function? sym-name)
-	(right `(~sym-name))
+	(monad [v (seqm (map trans-expr args))]
+	  (right (list* sym-name (map first v))))
 	(left (error (:pos name) "%s is not a function" (:value name)))))))
 
   
@@ -107,7 +108,7 @@
       (right (:value ast))
 
     :identifier
-      (-> ast :value symbol)
+      (right (-> ast :value symbol))
 
     :val-call
       (let [val (:value ast)]

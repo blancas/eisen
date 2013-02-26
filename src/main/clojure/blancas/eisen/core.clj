@@ -40,6 +40,12 @@
      (if (:ok ast) (trans (:decls ast)) ast))))
 
 
+(defn eisen=
+  "Runs the supplied Eisen code and shows the resulting value.
+   Intended to evaluating expressions at the REPL."
+  [text] (:value (eisen text)))
+
+
 (defn eisen*
   "Parses the supplied Eisen code as a dry run; discards the parsed results.
    Any errors are printed to stdout; intended for testing at the REPL."

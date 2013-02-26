@@ -65,7 +65,7 @@
 	(right sym-name))
       (if (function? sym-name)
 	(monad [v (seqm (map trans-expr args))]
-	  (right (list* sym-name (map first v))))
+	  (right (list* sym-name v)))
 	(left (error (:pos name) "%s is not a function" (:value name)))))))
 
   

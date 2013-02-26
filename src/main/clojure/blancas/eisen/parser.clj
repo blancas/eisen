@@ -37,7 +37,7 @@ Literal values follow the rules of Java and Clojure."
   "Lexical settings for the Eisen language."
   (assoc lex/haskell-style
     :identifier-start   (<|> lower (sym* \_))
-    :identifier-letter  (<|> alpha-num (sym* \_))
+    :identifier-letter  (<|> alpha-num (sym* \_) (sym* \*) (sym* \?) (sym* \!))
     :reserved-names     ["_" "val" "fun"]))
 
 (def rec (lex/make-parsers eisen-style))

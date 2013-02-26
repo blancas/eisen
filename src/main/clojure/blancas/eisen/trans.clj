@@ -25,13 +25,14 @@
 
 
 (defn function?
-  "Tests if the symbol is a function or macro."
-  [s] (-> s resolve var-get fn?))
+  "Tests if the var is a function or macro. If there's no root
+   binding we assume that is a forward-declared function."
+  [v] (if (bound? v) (fn? (var-get v)) true))
 
 
-(defn exp [x n]
+(defn exp
   "Implements the power-of (**) operator."
-  (reduce * (repeat n x)))
+  [x n] (reduce * (repeat n x)))
 
 
 (defn conj-rev
@@ -58,15 +59,18 @@
 (defn val-call
   "Translates a constant or a function call."
   [name args]
-  (let [sym-name (-> name :value symbol)]
-    (if (zero? (count args))
-      (if (function? sym-name)
-	(right `(~sym-name))
-	(right sym-name))
-      (if (function? sym-name)
-	(monad [v (seqm (map trans-expr args))]
-	  (right (list* sym-name v)))
-	(left (error (:pos name) "%s is not a function" (:value name)))))))
+  (let [sym-name (-> name :value symbol)
+	var-inst (resolve sym-name)]
+    (if var-inst
+      (if (zero? (count args))
+        (if (function? var-inst)
+	  (right `(~sym-name))
+	  (right sym-name))
+        (if (function? var-inst)
+	  (monad [v (seqm (map trans-expr args))]
+	    (right (list* sym-name v)))
+	  (left (error (:pos name) "%s is not a function" (:value name)))))
+      (left (error (:pos name) "undeclared identifier: %s" (:value name))))))
 
   
 (defn trans-binop

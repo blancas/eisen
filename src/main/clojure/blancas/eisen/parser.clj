@@ -24,7 +24,7 @@ trim-newline         Yes
 Literal values follow the rules of Java and Clojure."
       :author "Armando Blancas"}
   blancas.eisen.parser
-  (:use [blancas.kern.core]
+  (:use [blancas.kern core i18n]
 	[blancas.kern.expr :only (prefix1* chainl1* chainr1*)])
   (:require [blancas.kern.lexer :as lex]))
 
@@ -37,7 +37,7 @@ Literal values follow the rules of Java and Clojure."
   "Lexical settings for the Eisen language."
   (assoc lex/haskell-style
     :identifier-start   (<|> lower (sym* \_))
-    :identifier-letter  (<|> alpha-num (sym* \_) (sym* \*) (sym* \?) (sym* \!))
+    :identifier-letter  (<|> alpha-num (sym* \_) (sym* \?) (sym* \!))
     :reserved-names     ["_" "val" "fun"]))
 
 (def rec (lex/make-parsers eisen-style))
@@ -102,6 +102,66 @@ Literal values follow the rules of Java and Clojure."
     (return {:token :keyword :value key :pos pos})))
 
 
+;; Custom parsing of numeric literals for reading function arguments.
+;; In these cases the parser must not allow a leading sing as part
+;; of the literal, as it interferes with the overall arithmetic.
+
+(def sign (optional (one-of* "+-")))
+
+(def int-suffix (<|> (<< (sym* \N) (not-followed-by letter))
+		     (not-followed-by (<|> letter (sym* \.)))))
+
+(def float-suffix (<< (optional (sym* \M)) (not-followed-by letter)))
+
+(def custom-dec-lit
+  (<?> (>>= (<:> (lexeme (<+> (many1 digit) int-suffix)))
+            (fn [x] (return (read-string x))))
+       (i18n :dec-lit)))
+	
+(def custom-oct-lit
+  (<?> (>>= (<:> (lexeme (<+> (sym* \0) (many oct-digit) int-suffix)))
+            (fn [x] (return (read-string x))))
+       (i18n :oct-lit)))
+
+(def custom-hex-lit
+  (<?> (>>= (<:> (lexeme (<+> (token- "0x") (many1 hex-digit) int-suffix)))
+            (fn [x] (return (read-string x))))
+       (i18n :hex-lit)))
+
+(def custom-flt-lit
+  (<?> (>>= (<:> (lexeme
+		   (<+> (many1 digit)
+	                (option ".0" (<*> (sym* \.) (many1 digit)))
+	                (optional (<*> (one-of* "eE") sign (many1 digit)))
+			float-suffix)))
+            (fn [x] (return (read-string x))))
+       (i18n :float-lit)))
+
+
+(def dec-lit*
+  "Parses a decimal literal, with no leading sign."
+  (bind [pos get-position val custom-dec-lit]
+    (return {:token :dec-lit :value val :pos pos})))
+
+
+(def oct-lit*
+  "Parses an octal literal, with no leading sign."
+  (bind [pos get-position val custom-oct-lit]
+    (return {:token :oct-lit :value val :pos pos})))
+
+
+(def hex-lit*
+  "Parses a hex literal, with no leading sign."
+  (bind [pos get-position val custom-hex-lit]
+    (return {:token :hex-lit :value val :pos pos})))
+
+
+(def flt-lit*
+  "Parses a floating-point literal, with no leading sign."
+  (bind [pos get-position val custom-flt-lit]
+    (return {:token :float-lit :value val :pos pos})))
+
+
 ;; +-------------------------------------------------------------+
 ;; |                     Parser definitions.                     |
 ;; +-------------------------------------------------------------+
@@ -154,10 +214,10 @@ Literal values follow the rules of Java and Clojure."
   (<|> key-name
        char-lit
        string-lit
-       dec-lit
-       oct-lit
-       hex-lit
-       float-lit
+       dec-lit*
+       oct-lit*
+       hex-lit*
+       flt-lit*
        bool-lit
        nil-lit
        list-lit

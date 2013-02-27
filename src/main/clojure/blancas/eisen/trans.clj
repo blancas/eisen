@@ -104,7 +104,7 @@
   [{:keys [value pos]}]
   (let [sym-name (symbol value)]
     (monad [env (get-st right)]
-      (if (contains? env value)
+      (if (contains? env sym-name)
         (make-right (make-ref sym-name))
 	(if-let [var-inst (resolve sym-name)]
           (if (function? var-inst)
@@ -118,7 +118,7 @@
   [{:keys [value pos]}]
   (let [sym-name (symbol value)]
     (monad [env (get-st right)]
-      (if (contains? env value)
+      (if (contains? env sym-name)
         (make-right (make-ref sym-name))
 	(if (resolve sym-name)
 	  (make-right sym-name)
@@ -133,7 +133,7 @@
 	sym-name (symbol value)]
     (monad [env (get-st right)
 	    lst (seqm (map trans-expr args))]
-      (if (contains? env value)
+      (if (contains? env sym-name)
         (make-right (list* sym-name lst))
 	(if-let [var-inst (resolve sym-name)]
           (if (function? var-inst)

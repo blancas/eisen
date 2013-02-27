@@ -10,7 +10,34 @@
       :author "Armando Blancas"}
   blancas.eisen.trans
   (:use [blancas.morph.core :only (monad seqm)]
-	[blancas.morph.monads :only (left right either)]))
+	[blancas.morph.monads :only (left right either)]
+	[blancas.morph.transf :only (->StateT state-t eval-state-t)]))
+
+
+;; +-------------------------------------------------------------+
+;; |                    StateT Either monad.                     |
+;; +-------------------------------------------------------------+
+
+
+(defn make-left
+  "Makes a Left value inside a State. This makes possible
+   to get a Left off `run-se` whose value is not a pair."
+  [x] (->StateT left (fn [_] (left x))))
+
+
+(defn make-right
+  "Makes an Right value inside a State."
+  [x] (state-t right x))
+
+
+(defn run-se
+  "Returns the Either inner monad."
+  [m s] (eval-state-t m s))
+
+
+;; +-------------------------------------------------------------+
+;; |                   Translator utilities.                     |
+;; +-------------------------------------------------------------+
 
 
 (defn error
@@ -40,6 +67,11 @@
   [x coll] (conj coll x))
 
 
+;; +-------------------------------------------------------------+
+;; |                   The Eisen Translator.                     |
+;; +-------------------------------------------------------------+
+
+
 (declare trans-expr trans-exprs)
 
 
@@ -48,7 +80,7 @@
   [ast]
   (let [name (symbol (:name ast))]
     (monad [val (trans-expr (:value ast))]
-      (right `(def ~name ~val)))))
+      (make-right `(def ~name ~val)))))
 
 
 (defn trans-fun
@@ -56,7 +88,7 @@
   [{:keys [name params value]}]
   (monad [env (trans-exprs params)
 	  code (trans-expr value)]
-    (right `(defn ~(symbol name) ~env ~code))))
+    (make-right `(defn ~(symbol name) ~env ~code))))
 
 
 (defn val-call
@@ -67,13 +99,13 @@
     (if var-inst
       (if (zero? (count args))
         (if (function? var-inst)
-	  (right `(~sym-name))
-	  (right sym-name))
+	  (make-right `(~sym-name))
+	  (make-right sym-name))
         (if (function? var-inst)
 	  (monad [v (seqm (map trans-expr args))]
-	    (right (list* sym-name v)))
-	  (left (error (:pos name) "%s is not a function" (:value name)))))
-      (left (error (:pos name) "undeclared identifier: %s" (:value name))))))
+	    (make-right (list* sym-name v)))
+	  (make-left (error (:pos name) "%s is not a function" (:value name)))))
+      (make-left (error (:pos name) "undeclared identifier: %s" (:value name))))))
 
   
 (defn trans-binop
@@ -82,7 +114,7 @@
   (monad [x (trans-expr (:left ast))
 	  y (trans-expr (:right ast))]
     (let [f (-> ast :op :value str symbol)]
-      (right `(~f ~x ~y)))))
+      (make-right `(~f ~x ~y)))))
 
 
 (defn trans-uniop
@@ -90,7 +122,7 @@
   [ast]
   (monad [y (trans-expr (:right ast))]
     (let [f (-> ast :op :value str symbol)]
-      (right `(~f ~y)))))
+      (make-right `(~f ~y)))))
 
 
 (defn trans-expr
@@ -100,24 +132,24 @@
     (:new-line :char-lit  :string-lit :dec-lit  :oct-lit
      :hex-lit  :float-lit :bool-lit   :nil-lit  :semi
      :comma    :colon     :dot        :keyword  :re-lit)
-                 (right (:value ast))
+                 (make-right (:value ast))
 
-    :identifier  (right (-> ast :value symbol))
+    :identifier  (make-right (-> ast :value symbol))
 
     :val-call    (let [val (:value ast)]
                    (val-call (first val) (rest val)))
 
     :list-lit    (monad [vals (trans-exprs (:value ast))]
-                   (right `(list ~@vals)))
+                   (make-right `(list ~@vals)))
 
     :vector-lit  (monad [vals (trans-exprs (:value ast))]
-                   (right vals))
+                   (make-right vals))
 
     :set-lit     (monad [vals (trans-exprs (:value ast))]
-                   (right (set vals)))
+                   (make-right (set vals)))
 
     :map-lit     (monad [vals (trans-exprs (:value ast))]
-                   (right (apply hash-map vals)))
+                   (make-right (apply hash-map vals)))
 
     :BINOP       (trans-binop ast)
 
@@ -128,8 +160,8 @@
   "Translates a collection of ASTs into Clojure expressions."
   [coll]
   (if (seq coll)
-    (monad [v (seqm (map trans-expr coll))] (right v))
-    (right [])))
+    (monad [v (seqm (map trans-expr coll))] (make-right v))
+    (make-right [])))
 
 
 (defn trans-ast
@@ -145,7 +177,7 @@
    generated code and the result of the evaluation."
   [ast]
   (monad [code (trans-ast ast)]
-    (right [code (eval code)])))
+    (make-right [code (eval code)])))
 
 
 (defn trans
@@ -156,6 +188,7 @@
    :decls  if ok, a vector of Clojure forms
    :error  if not ok, the error or warning message"
   [coll]
-  (either [res (monad [v (seqm (map eval-ast coll))] (right v))]
-    {:ok false :error res}
-    {:ok true :decls (map first res) :value (-> res last second)}))
+  (let [job (monad [v (seqm (map eval-ast coll))] (make-right v))]
+    (either [res (run-se job #{})]
+      {:ok false :error res}
+      {:ok true :decls (map first res) :value (-> res last second)})))

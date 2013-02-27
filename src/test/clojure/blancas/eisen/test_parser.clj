@@ -108,13 +108,13 @@
 (deftest test-0050
   (fact "An eisen identifier."
     (let [p1 (parse-eisen "foobar")]
-      (-> p1 :decls first :value first :value)) => "foobar"
+      (-> p1 :decls first :value)) => "foobar"
     (let [p1 (parse-eisen "_foobar")]
-      (-> p1 :decls first :value first :value)) => "_foobar"
+      (-> p1 :decls first :value)) => "_foobar"
     (let [p1 (parse-eisen "foo_bar123")]
-      (-> p1 :decls first :value first :value)) => "foo_bar123"
+      (-> p1 :decls first :value)) => "foo_bar123"
     (let [p1 (parse-eisen "_0123")]
-      (-> p1 :decls first :value first :value)) => "_0123"
+      (-> p1 :decls first :value)) => "_0123"
     (let [p1 (parse-eisen "Foo")] ;; first capital is for data types
       (:ok p1) => false?)))
 

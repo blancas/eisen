@@ -102,6 +102,19 @@ Literal values follow the rules of Java and Clojure."
     (return {:token :keyword :value key :pos pos})))
 
 
+(def id-formal
+  "Parses an identifier as a formal parameter."
+  (bind [pos get-position id identifier]
+    (return (assoc id :token :id-formal))))
+
+
+(def id-arg
+  "Parses an identifier as an argument; as such it won't be called
+   if it refers to a function."
+  (bind [pos get-position id identifier]
+    (return (assoc id :token :id-arg))))
+
+
 ;; Custom parsing of numeric literals for reading function arguments.
 ;; In these cases the parser must not allow a leading sing as part
 ;; of the literal, as it interferes with the overall arithmetic.
@@ -225,14 +238,16 @@ Literal values follow the rules of Java and Clojure."
        set-lit
        map-lit
        re-lit
-       identifier
+       id-arg
        (parens (fwd expr))))
 
 
 (def val-call
   "Parses a reference to a value or a function call."
   (bind [name identifier args (many argument)]
-    (return {:token :val-call :value (into [name] args)})))
+    (if (empty? args)
+      (return name)  
+      (return {:token :fun-call :value (into [name] args)}))))
 
 
 (def factor
@@ -367,7 +382,7 @@ Literal values follow the rules of Java and Clojure."
   "Parses a function definition."
   (bind [_     (word "fun")
 	 name  identifier
-	 parm  (many identifier)
+	 parm  (many id-formal)
 	 _     (sym \=)
 	 val   expr]
     (return {:token :fun :name (:value name) :params parm :value val})))

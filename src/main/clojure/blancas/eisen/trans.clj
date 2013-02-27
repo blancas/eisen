@@ -12,7 +12,7 @@
   (:use [clojure.set :only (difference)]
         [blancas.morph.core :only (monad seqm)]
 	[blancas.morph.monads :only (left right either)]
-	[blancas.morph.transf :only (->StateT state-t modify-st eval-state-t)]))
+	[blancas.morph.transf :only (->StateT state-t get-st modify-st eval-state-t)]))
 
 
 ;; +-------------------------------------------------------------+
@@ -68,6 +68,11 @@
   [x coll] (conj coll x))
 
 
+(defn make-ref
+  "Encodes a reference for a local symbol."
+  [s] `(if (fn? ~s) (~s) ~s))
+
+
 ;; +-------------------------------------------------------------+
 ;; |                   The Eisen Translator.                     |
 ;; +-------------------------------------------------------------+
@@ -94,23 +99,49 @@
     (make-right `(defn ~(symbol name) ~env ~code))))
 
 
-(defn val-call
-  "Translates a constant or a function call."
-  [name args]
-  (let [sym-name (-> name :value symbol)
-	var-inst (resolve sym-name)]
-    (if var-inst
-      (if (zero? (count args))
-        (if (function? var-inst)
-	  (make-right `(~sym-name))
-	  (make-right sym-name))
-        (if (function? var-inst)
-	  (monad [v (seqm (map trans-expr args))]
-	    (make-right (list* sym-name v)))
-	  (make-left (error (:pos name) "%s is not a function" (:value name)))))
-      (make-left (error (:pos name) "undeclared identifier: %s" (:value name))))))
+(defn trans-identifier
+  "Translates a reference to an identifier."
+  [{:keys [value pos]}]
+  (let [sym-name (symbol value)]
+    (monad [env (get-st right)]
+      (if (contains? env value)
+        (make-right (make-ref sym-name))
+	(if-let [var-inst (resolve sym-name)]
+          (if (function? var-inst)
+	    (make-right `(~sym-name))
+	    (make-right sym-name))
+          (make-left (error pos "undeclared identifier: %s" value)))))))
 
-  
+
+(defn trans-idarg
+  "Translates a reference to an identifier as an argument."
+  [{:keys [value pos]}]
+  (let [sym-name (symbol value)]
+    (monad [env (get-st right)]
+      (if (contains? env value)
+        (make-right (make-ref sym-name))
+	(if (resolve sym-name)
+	  (make-right sym-name)
+          (make-left (error pos "undeclared identifier: %s" value)))))))
+
+
+(defn trans-funcall
+  "Translates a function call."
+  [name args]
+  (let [value (:value name)
+	pos (:pos name)
+	sym-name (symbol value)]
+    (monad [env (get-st right)
+	    lst (seqm (map trans-expr args))]
+      (if (contains? env value)
+        (make-right (list* sym-name lst))
+	(if-let [var-inst (resolve sym-name)]
+          (if (function? var-inst)
+	    (make-right (list* sym-name lst))
+	    (make-left (error pos "%s is not a function" value)))
+          (make-left (error pos "undeclared identifier: %s" value)))))))
+
+
 (defn trans-binop
   "Translates the application of a binary operator."
   [ast]
@@ -137,10 +168,14 @@
      :comma    :colon     :dot        :keyword  :re-lit)
                  (make-right (:value ast))
 
-    :identifier  (make-right (-> ast :value symbol))
+    :id-formal   (make-right (-> ast :value symbol))
 
-    :val-call    (let [val (:value ast)]
-                   (val-call (first val) (rest val)))
+    :id-arg      (trans-idarg ast)
+
+    :identifier  (trans-identifier ast)
+
+    :fun-call    (let [val (:value ast)]
+                   (trans-funcall (first val) (rest val)))
 
     :list-lit    (monad [vals (trans-exprs (:value ast))]
                    (make-right `(list ~@vals)))

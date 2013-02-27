@@ -9,9 +9,10 @@
 (ns ^{:doc "The Eisen Translator."
       :author "Armando Blancas"}
   blancas.eisen.trans
-  (:use [blancas.morph.core :only (monad seqm)]
+  (:use [clojure.set :only (difference)]
+        [blancas.morph.core :only (monad seqm)]
 	[blancas.morph.monads :only (left right either)]
-	[blancas.morph.transf :only (->StateT state-t eval-state-t)]))
+	[blancas.morph.transf :only (->StateT state-t modify-st eval-state-t)]))
 
 
 ;; +-------------------------------------------------------------+
@@ -87,7 +88,9 @@
   "Translates an AST into a Clojure function definition."
   [{:keys [name params value]}]
   (monad [env (trans-exprs params)
-	  code (trans-expr value)]
+	  _   (modify-st right into env)
+	  code (trans-expr value)
+	  _   (modify-st right difference env)]
     (make-right `(defn ~(symbol name) ~env ~code))))
 
 

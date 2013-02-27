@@ -15,7 +15,7 @@ comment-end          -}
 comment-line         --
 nested-comments      Yes
 identifier-start     Lowercase or _
-identifier-letter    Alphanumeric or _ 
+identifier-letter    Alphanumeric or _ ' ? !
 reserved-names       None
 case-sensitive       Yes
 line-continuation    Backslash
@@ -37,8 +37,9 @@ Literal values follow the rules of Java and Clojure."
   "Lexical settings for the Eisen language."
   (assoc lex/haskell-style
     :identifier-start   (<|> lower (sym* \_))
-    :identifier-letter  (<|> alpha-num (sym* \_) (sym* \?) (sym* \!))
+    :identifier-letter  (<|> alpha-num (one-of* "_'?!"))
     :reserved-names     ["_" "val" "fun"]))
+
 
 (def rec (lex/make-parsers eisen-style))
 
@@ -104,7 +105,7 @@ Literal values follow the rules of Java and Clojure."
 
 (def id-formal
   "Parses an identifier as a formal parameter."
-  (bind [pos get-position id identifier]
+  (bind [pos get-position id (<|> (word "_") identifier)]
     (return (assoc id :token :id-formal))))
 
 

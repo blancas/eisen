@@ -43,17 +43,20 @@
 (declare trans-expr trans-exprs)
 
 
-(defn trans-def
+(defn trans-val
   "Translates an AST into a Clojure var definition."
   [ast]
   (let [name (symbol (:name ast))]
-    (either [val (trans-expr (:value ast))]
+    (monad [val (trans-expr (:value ast))]
       (right `(def ~name ~val)))))
 
 
-(defn trans-defn
+(defn trans-fun
   "Translates an AST into a Clojure function definition."
-  [ast] nil)
+  [{:keys [name params value]}]
+  (monad [env (trans-exprs params)
+	  code (trans-expr value)]
+    (right `(defn ~(symbol name) ~env ~code))))
 
 
 (defn val-call
@@ -126,14 +129,14 @@
   [coll]
   (if (seq coll)
     (monad [v (seqm (map trans-expr coll))] (right v))
-    (right ())))
+    (right [])))
 
 
 (defn trans-ast
   "Translates a collection of AST maps into unevaluated Clojure forms."
   [ast]
-  (cond (= (:token ast) :val) (trans-def ast)
-	(= (:token ast) :fun) (trans-defn ast)
+  (cond (= (:token ast) :val) (trans-val ast)
+	(= (:token ast) :fun) (trans-fun ast)
 	:else                 (trans-expr ast)))
 
 

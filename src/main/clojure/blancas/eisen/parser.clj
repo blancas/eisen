@@ -283,6 +283,13 @@ Literal values follow the rules of Java and Clojure."
        (one-of  "+-")))
 
 
+(def back-op
+  "Parses the backquoted name of an arity-2 function as a binary operator."
+  (let [fst (<|> letter (one-of* "!$*-_+=<>?"))
+        rst (<|> fst digit (sym* \'))]
+    (lexer (lexeme (between (sym* \`) (sym* \`) (<+> fst (many rst)))))))
+
+
 (def mul-op
   "Multiplicative operators; a backslash denotes (quot);
    % denotes (mod); * denotes multiplication; and / denotes
@@ -357,7 +364,8 @@ Literal values follow the rules of Java and Clojure."
 
 (def power  (chainr1* :BINOP  factor pow-op))
 (def unary  (prefix1* :UNIOP  power  uni-op))
-(def term   (chainl1* :BINOP  unary  mul-op))
+(def fbin   (chainl1* :BINOP  unary  back-op))
+(def term   (chainl1* :BINOP  fbin   mul-op))
 (def sum    (chainl1* :BINOP  term   add-op))
 (def const  (chainr1* :BINOP  sum    cons-op))
 (def cat    (chainl1* :BINOP  const  lcat-op))

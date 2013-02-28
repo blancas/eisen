@@ -215,7 +215,10 @@
    generated code and the result of the evaluation."
   [ast]
   (monad [code (trans-ast ast)]
-    (make-right [code (eval code)])))
+    (try
+      (make-right [code (eval code)])
+      (catch Throwable t
+	(make-left [code (str t)])))))
 
 
 (defn trans

@@ -116,6 +116,20 @@ Literal values follow the rules of Java and Clojure."
     (return (assoc id :token :id-arg))))
 
 
+(def lisp-id
+  "Parses a lisp id with extra characters."
+  (let [fst (<|> letter (one-of* "!$*-_+=<>?"))
+        rst (<|> fst digit (sym* \'))]
+    (<+> fst (many rst))))
+
+
+(def lisp-name
+  "Parses a lisp name between dots to avoid interference with eisen."
+  (bind [pos get-position
+	 val (lexeme (between (sym* \.) (sym* \.) lisp-id))]
+    (return {:token :identifier :value val :pos pos})))
+
+
 ;; Custom parsing of numeric literals for reading function arguments.
 ;; In these cases the parser must not allow a leading sing as part
 ;; of the literal, as it interferes with the overall arithmetic.
@@ -245,7 +259,7 @@ Literal values follow the rules of Java and Clojure."
 
 (def val-call
   "Parses a reference to a value or a function call."
-  (bind [name identifier args (many argument)]
+  (bind [name (<|> lisp-name identifier) args (many argument)]
     (if (empty? args)
       (return name)  
       (return {:token :fun-call :value (into [name] args)}))))
@@ -284,10 +298,9 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def back-op
-  "Parses the backquoted name of an arity-2 function as a binary operator."
-  (let [fst (<|> letter (one-of* "!$*-_+=<>?"))
-        rst (<|> fst digit (sym* \'))]
-    (lexer (lexeme (between (sym* \`) (sym* \`) (<+> fst (many rst)))))))
+  "Parses the backquoted name of an arity-2 function as a binary
+   operator; for eisen or lisp functions."
+  (lexer (lexeme (between (sym* \`) (sym* \`) lisp-id))))
 
 
 (def mul-op

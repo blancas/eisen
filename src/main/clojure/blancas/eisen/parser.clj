@@ -389,7 +389,12 @@ Literal values follow the rules of Java and Clojure."
 (def relex  (chainl1* :BINOP  bor    rel-op))
 (def equ    (chainl1* :BINOP  relex  equ-op))
 (def andex  (chainl1* :BINOP  equ    and-op))
-(def expr   (chainl1* :BINOP  andex  or-op))
+(def orex   (chainl1* :BINOP  andex  or-op))
+
+
+(def expr
+  "Parses an Eisen expression."
+  orex)
 
 
 (def def-decl
@@ -411,7 +416,7 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def eisen-code
-  "Parses one or more declarations or expressions."
+  "Parses one or more declarations, or a single expressions."
   (>> trim
       (<|> (<$> flatten (many1 (<|> def-decl fun-decl)))
 	   (<$> vector expr))))

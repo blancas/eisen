@@ -353,3 +353,10 @@
     (let [_ (eisen "val foo = 5005")]
       (eisen= "inc foo")) => 5006))
 
+
+(deftest test-0705
+  (fact "calling user-defined functions as binary operators"
+    (let [_ (eisen "fun sum x y  =  x + y")]
+      (eisen= "3 `sum` 4")) => 7
+    (let [_ (eisen "fun mul x y  =  x * y")]
+      (eisen= "3 `mul` 4")) => 12))

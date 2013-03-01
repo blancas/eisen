@@ -159,6 +159,18 @@
       (make-right `(~f ~y)))))
 
 
+(defn trans-cond
+  "Translates a conditional expression."
+  [ast]
+  (let [e (:else ast)]
+    (monad [test (trans-expr (:test ast))
+	    then (trans-expr (:then ast))
+	    else (if e (trans-expr (:else ast)) (make-right :empty))]
+      (if (= else :empty)
+        (make-right `(if ~test ~then))
+        (make-right `(if ~test ~then ~else))))))
+
+
 (defn trans-expr
   "Translates an AST into a Clojure expression."
   [ast]
@@ -189,9 +201,14 @@
     :map-lit     (monad [vals (trans-exprs (:value ast))]
                    (make-right (apply hash-map vals)))
 
+    :comp-expr   (monad [vals (trans-exprs (:value ast))]
+                   (make-right `(do ~@vals)))
+
     :BINOP       (trans-binop ast)
 
-    :UNIOP       (trans-uniop ast)))
+    :UNIOP       (trans-uniop ast)
+
+    :cond-expr   (trans-cond ast)))
 
 
 (defn trans-exprs

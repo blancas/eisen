@@ -38,7 +38,7 @@ Literal values follow the rules of Java and Clojure."
   (assoc lex/haskell-style
     :identifier-start   (<|> lower (sym* \_))
     :identifier-letter  (<|> alpha-num (one-of* "_'?!"))
-    :reserved-names     ["_" "val" "fun"]))
+    :reserved-names     ["_" "val" "fun" "if" "then" "else"]))
 
 
 (def rec (lex/make-parsers eisen-style))
@@ -392,9 +392,25 @@ Literal values follow the rules of Java and Clojure."
 (def orex   (chainl1* :BINOP  andex  or-op))
 
 
+(def compex
+  "Parses a compound expression: one or more expressions in
+   parenthesis and separated by semicolons. The value of the
+   compound expression is the value of its last expression."
+  (bind [xs (parens (semi-sep orex))]
+    (return {:token :comp-expr :value xs})))
+
+
+(def condex
+  "Parses a conditional expression."
+  (bind [test (>> (word "if") orex)
+	 then (>> (word "then") (fwd expr))
+	 else (optional (>> (word "else") (fwd expr)))]
+    (return {:token :cond-expr :test test :then then :else else})))
+	 
+
 (def expr
   "Parses an Eisen expression."
-  orex)
+  (<|> compex condex orex))
 
 
 (def def-decl

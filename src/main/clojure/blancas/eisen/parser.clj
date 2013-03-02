@@ -109,13 +109,6 @@ Literal values follow the rules of Java and Clojure."
     (return (assoc id :token :id-formal))))
 
 
-(def id-arg
-  "Parses an identifier as an argument; as such it won't be called
-   if it refers to a function."
-  (bind [pos get-position arg identifier]
-    (return (assoc arg :token :id-arg))))
-
-
 (def lisp-id
   "Parses a lisp id with extra characters."
   (let [fst (<|> letter (one-of* "!$*-_+=<>?"))
@@ -128,6 +121,18 @@ Literal values follow the rules of Java and Clojure."
   (bind [pos get-position
 	 val (lexeme (between (sym* \.) (sym* \.) lisp-id))]
     (return {:token :identifier :value val :pos pos})))
+
+
+(def eisen-name
+  "An Eisen name is an eisen identifier or a lisp name."
+  (<|> identifier lisp-name))
+
+
+(def id-arg
+  "Parses an identifier as an argument; as such it won't be called
+   if it refers to a function."
+  (bind [pos get-position arg eisen-name]
+    (return (assoc arg :token :id-arg))))
 
 
 ;; Custom parsing of numeric literals for reading function arguments.
@@ -259,7 +264,7 @@ Literal values follow the rules of Java and Clojure."
 
 (def val-call
   "Parses a reference to a value or a function call."
-  (bind [name (<|> lisp-name identifier) args (many argument)]
+  (bind [name eisen-name args (many argument)]
     (if (empty? args)
       (return name)  
       (return {:token :fun-call :value (into [name] args)}))))

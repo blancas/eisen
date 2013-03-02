@@ -416,24 +416,3 @@
     (let [_ (eisen= "val t915 = 5")]
       (eisen= "if t915 == 0 then 0 else if t915 == 1 then 1 else if t915 == 5 then 5")
        => 5)))
-
-
-;; +-------------------------------------------------------------+
-;; |                    Defining Functions.                      |
-;; +-------------------------------------------------------------+
-
-
-(deftest test-1000
-  (ns user)
-  (eisen "fun const = 99")
-  (eisen "fun plusOne n  =  inc n")
-  (eisen "fun addition a b  = a + b")
-  (eisen "def plus5 = addition 5")
-  (eisen "fun limit x y lim  = if x + y > lim then lim else x + y")
-  (fact "smoke test function definitions and a curried function"
-    (eisen= "const") => 99
-    (eisen= "plusOne const") => 100
-    (eisen= "addition 3 4") => 7
-    (eisen= "plus5 995") => 1000
-    (eisen= "limit 30 40 50") => 50
-    (eisen= "limit 30 40 99") => 70))

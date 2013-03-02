@@ -112,8 +112,8 @@ Literal values follow the rules of Java and Clojure."
 (def id-arg
   "Parses an identifier as an argument; as such it won't be called
    if it refers to a function."
-  (bind [pos get-position id identifier]
-    (return (assoc id :token :id-arg))))
+  (bind [pos get-position arg identifier]
+    (return (assoc arg :token :id-arg))))
 
 
 (def lisp-id
@@ -392,12 +392,12 @@ Literal values follow the rules of Java and Clojure."
 (def orex   (chainl1* :BINOP  andex  or-op))
 
 
-(def compex
-  "Parses a compound expression: one or more expressions in
+(def seqex
+  "Parses sequenced expressions: one or more expressions in
    parenthesis and separated by semicolons. The value of the
    compound expression is the value of its last expression."
   (bind [xs (parens (semi-sep orex))]
-    (return {:token :comp-expr :value xs})))
+    (return {:token :seq-expr :value xs})))
 
 
 (def condex
@@ -410,7 +410,7 @@ Literal values follow the rules of Java and Clojure."
 
 (def expr
   "Parses an Eisen expression."
-  (<|> compex condex orex))
+  (<|> seqex condex orex))
 
 
 (def def-decl

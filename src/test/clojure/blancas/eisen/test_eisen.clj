@@ -7,8 +7,9 @@
 ;; You must not remove this notice, or any other, from this software.
 
 (ns blancas.eisen.test-eisen
-  (:use [blancas.eisen.core]
-	[clojure.test]
+  (:use [clojure.test]
+	[blancas.eisen.core]
+	[blancas.morph.core :only (defcurry)]
 	[midje.sweet :exclude (expect one-of)]))
 
 
@@ -252,7 +253,7 @@
 
 
 ;; +-------------------------------------------------------------+
-;; |                    Operators precedence.                    |
+;; |                    Operators Precedence.                    |
 ;; +-------------------------------------------------------------+
 
 
@@ -277,7 +278,7 @@
 
 
 ;; +-------------------------------------------------------------+
-;; |                      Declaring values.                      |
+;; |                      Declaring Values.                      |
 ;; +-------------------------------------------------------------+
 
 
@@ -314,7 +315,7 @@
 
 
 ;; +-------------------------------------------------------------+
-;; |                    References to values.                    |
+;; |                    References to Values.                    |
 ;; +-------------------------------------------------------------+
 
 
@@ -339,7 +340,7 @@
 
 
 ;; +-------------------------------------------------------------+
-;; |                     Calling functions.                      |
+;; |                     Calling Functions.                      |
 ;; +-------------------------------------------------------------+
 
 
@@ -366,3 +367,73 @@
   (fact "calling lisp functions with non-Eisen names"
     (eisen= ".+'. 3 4") => 7
     (eisen= "3 `+'` 4") => 7))
+
+
+;; +-------------------------------------------------------------+
+;; |                   Sequenced Expressions.                    |
+;; +-------------------------------------------------------------+
+
+
+(deftest test-0800
+  (fact "sequenced expressions go in parens separated by semicolons"
+    (eisen= "(1+1; 2+2; 3+3)") => 6
+    (eisen= "(inc 0; inc 1)") => 2
+    (eisen= "(inc 0; map inc [1,2,3,4])") => '(2 3 4 5)))
+
+
+;; +-------------------------------------------------------------+
+;; |                  Conditional Expressions.                   |
+;; +-------------------------------------------------------------+
+
+
+(deftest test-0900
+  (fact "simple conditional expression"
+    (eisen= "if true then 1") => 1
+    (eisen= "if false then 1") => nil
+    (eisen= "if zero? 0 then 500") => 500
+    (eisen= "if zero? 0 then 3 + 4") => 7
+    (eisen= "if zero? 1 then 100") => nil))
+
+
+(deftest test-0905
+  (fact "simple conditional expression with an else"
+    (eisen= "if true then 1 else 0") => 1
+    (eisen= "if false then 1 else 0") => 0
+    (eisen= "if zero? 0 then 500 else -1") => 500
+    (eisen= "if zero? 0 then -1 else 3 + 4") => -1
+    (eisen= "if zero? 1 then 100 else 99") => 99))
+
+
+(deftest test-0910
+  (fact "simple, nested conditional expression"
+    (eisen= "if zero? 0 then if 1 > 0 then if even? 2 then 99") => 99
+    (eisen= "if zero? 0 then if 1 > 0 then if odd? 2 then 99 else 8") => 8
+    (eisen= "if zero? 0 then if 1 > 9 then if odd? 2 then 99 else 8 else 5") => 5))
+
+
+(deftest test-0915
+  (fact "simple, nested conditional expression with else"
+    (let [_ (eisen= "val t915 = 5")]
+      (eisen= "if t915 == 0 then 0 else if t915 == 1 then 1 else if t915 == 5 then 5")
+       => 5)))
+
+
+;; +-------------------------------------------------------------+
+;; |                    Defining Functions.                      |
+;; +-------------------------------------------------------------+
+
+
+(deftest test-1000
+  (ns user)
+  (eisen "fun const = 99")
+  (eisen "fun plusOne n  =  inc n")
+  (eisen "fun addition a b  = a + b")
+  (eisen "def plus5 = addition 5")
+  (eisen "fun limit x y lim  = if x + y > lim then lim else x + y")
+  (fact "smoke test function definitions and a curried function"
+    (eisen= "const") => 99
+    (eisen= "plusOne const") => 100
+    (eisen= "addition 3 4") => 7
+    (eisen= "plus5 995") => 1000
+    (eisen= "limit 30 40 50") => 50
+    (eisen= "limit 30 40 99") => 70))

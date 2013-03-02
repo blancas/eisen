@@ -41,14 +41,20 @@
 
 
 (defn eisen=
-  "Runs the supplied Eisen code and shows the resulting value.
+  "Runs the supplied Eisen code and shows the resulting value or error.
    Intended to evaluating expressions at the REPL."
-  [text] (:value (eisen text)))
+  ([text]
+   (eisen= text ""))
+  ([text source]
+    (let [e (eisen text source)]
+      (if (:ok e)
+        (:value e)
+        (println (:error e))))))
 
 
 (defn eisen*
-  "Parses the supplied Eisen code as a dry run; discards the parsed results.
-   Any errors are printed to stdout; intended for testing at the REPL."
+  "Parses the supplied Eisen code and prints the syntax tree. Any
+   errors are printed to stdout; intended for testing at the REPL."
   ([text] (eisen* text ""))
   ([text source] (run eisen-code text source)))
 
@@ -60,9 +66,9 @@
   ([f en] (eisen (f->s f en) f)))
 
 
-(defn eisenf*
-  "Parses an eisen file as a dry run; discards the parsed results.
-   Takes an optional encoding, which defaults to UTF-8.
-   Any errors are printed to stdout; intended for testing at the REPL."
-  ([f] (eisenf* f "UTF-8"))
-  ([f en] (eisen* (f->s f en) f)))
+(defn eisenf=
+  "Parses an eisen file and prints the syntax tree. Takes an optional
+   encoding, which defaults to UTF-8. Any errors are printed to stdout;
+   intended for testing at the REPL."
+  ([f] (eisenf= f "UTF-8"))
+  ([f en] (eisen= (f->s f en) f)))

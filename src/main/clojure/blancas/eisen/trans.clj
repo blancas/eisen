@@ -92,11 +92,13 @@
 (defn trans-fun
   "Translates an AST into a Clojure function definition."
   [{:keys [name params value]}]
-  (monad [env (trans-exprs params)
-	  _   (modify-st right into env)
-	  code (trans-expr value)
-	  _   (modify-st right difference env)]
-    (make-right `(defn ~(symbol name) ~env ~code))))
+  (let [sym (symbol name)]
+    (monad [env (trans-exprs params)
+	    _   (modify-st right into (cons sym env))
+	    code (trans-expr value)
+	    _   (modify-st right difference (cons sym env))]
+      (let [decl (if (> (count env) 1) 'defcurry 'defn)]
+        (make-right `(~decl ~sym ~env ~code))))))
 
 
 (defn trans-identifier
@@ -201,7 +203,7 @@
     :map-lit     (monad [vals (trans-exprs (:value ast))]
                    (make-right (apply hash-map vals)))
 
-    :comp-expr   (monad [vals (trans-exprs (:value ast))]
+    :seq-expr    (monad [vals (trans-exprs (:value ast))]
                    (make-right `(do ~@vals)))
 
     :BINOP       (trans-binop ast)

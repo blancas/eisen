@@ -416,3 +416,35 @@
     (let [_ (eisen= "val t915 = 5")]
       (eisen= "if t915 == 0 then 0 else if t915 == 1 then 1 else if t915 == 5 then 5")
        => 5)))
+
+
+;; +-------------------------------------------------------------+
+;; |                    Defining Functions.                      |
+;; +-------------------------------------------------------------+
+
+
+(deftest test-1000
+  (eisen= "fun const = 99")
+  (fact "resolve a defined function --no args"
+    (-> 'const resolve var-get fn?) => true)
+  (fact "call a defined function"
+    (eisen= "const") => 99))
+
+
+(deftest test-1005
+  (eisen= "fun plusOne n  =  inc n")
+  (fact "resolve a defined function --one arg"
+    (-> 'plusOne resolve var-get fn?) => true)
+  (fact "call a defined function"
+    (eisen= "plusOne 99") => 100))
+
+
+(deftest test-1010
+  (use '[blancas.morph.core :only (defcurry)])
+  (eisen= "fun add a b  = a + b")
+  (eisen= "val plus5 = add 5")
+  (fact "resolve a defined function --two args"
+    (-> 'add resolve var-get fn?) => true)
+  (fact "call a defined function"
+	(eisen= "add 3 4") => 7
+	(eisen= "plus5 995") => 1000))

@@ -173,6 +173,40 @@
         (make-right `(if ~test ~then ~else))))))
 
 
+(defn- val-binding
+  "Parses a val binding."
+  [ast]
+  (let [name (symbol (:name ast))]
+    (monad [val (trans-expr (:value ast))]
+      (make-right [name val]))))
+
+
+(defn- fun-binding
+  "Parses a function binding."
+  [ast]
+  (let [name (symbol (:name ast))]
+    (make-right [name '(fn [x] x)])))
+
+
+(defn- trans-binding
+  "Parses a val or fun binding."
+  [ast]
+  (if (= (:token ast) :val)
+    (val-binding ast)
+    (fun-binding ast)))
+
+
+(defn trans-let
+  "Translates a let expression."
+  [ast]
+  (let [env (map #(-> % :name symbol) (:decls ast))]
+    (monad [decls (seqm (map trans-binding (:decls ast)))
+	    _     (modify-st right into env)
+            exprs (seqm (map trans-expr (:exprs ast)))
+	    _     (modify-st right difference env)]
+      (make-right `(let [~@(flatten decls)] ~@exprs)))))
+
+
 (defn trans-expr
   "Translates an AST into a Clojure expression."
   [ast]
@@ -210,7 +244,9 @@
 
     :UNIOP       (trans-uniop ast)
 
-    :cond-expr   (trans-cond ast)))
+    :cond-expr   (trans-cond ast)
+
+    :let-expr    (trans-let ast)))
 
 
 (defn trans-exprs

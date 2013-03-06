@@ -38,7 +38,7 @@ Literal values follow the rules of Java and Clojure."
   (assoc lex/haskell-style
     :identifier-start   (<|> lower (sym* \_))
     :identifier-letter  (<|> alpha-num (one-of* "_'?!"))
-    :reserved-names     ["_" "val" "fun" "if" "then" "else"]))
+    :reserved-names     ["_" "val" "fun" "if" "then" "else" "let" "in" "end"]))
 
 
 (def rec (lex/make-parsers eisen-style))
@@ -200,7 +200,7 @@ Literal values follow the rules of Java and Clojure."
 ;; +-------------------------------------------------------------+
 
 
-(declare expr)
+(declare expr val-decl fun-decl)
 
 
 (def list-lit
@@ -413,12 +413,22 @@ Literal values follow the rules of Java and Clojure."
     (return {:token :cond-expr :test test :then then :else else})))
 	 
 
+(def letex
+  "Parses a let expression."
+  (bind [_ (word "let")
+	 decls (<$> flatten (many (<|> val-decl fun-decl)))
+	 _ (word "in")
+	 exprs (many expr)
+	 _ (word "end")]
+    (return {:token :let-expr :decls decls :exprs exprs})))
+
+
 (def expr
   "Parses an Eisen expression."
-  (<|> seqex condex orex))
+  (<|> seqex condex letex orex))
 
 
-(def def-decl
+(def val-decl
   "Parses a declaration for a named value."
   (>> (word "val")
       (semi-sep1
@@ -439,5 +449,5 @@ Literal values follow the rules of Java and Clojure."
 (def eisen-code
   "Parses one or more declarations, or a single expressions."
   (>> trim
-      (<|> (<$> flatten (many1 (<|> def-decl fun-decl)))
+      (<|> (<$> flatten (many1 (<|> val-decl fun-decl)))
 	   (<$> vector expr))))

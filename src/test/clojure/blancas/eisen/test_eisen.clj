@@ -448,3 +448,59 @@
   (fact "call a defined function"
 	(eisen= "add 3 4") => 7
 	(eisen= "plus5 995") => 1000))
+
+
+;; +-------------------------------------------------------------+
+;; |                      Let Expressions.                       |
+;; +-------------------------------------------------------------+
+
+
+(deftest test-1100
+  (let [code1 "let val foo = 99 in foo end"
+	code2 "let val foo = 99 in foo+1 end"]
+    (fact "let with a simple val"
+      (eisen= code1) => 99
+      (eisen= code2) => 100)))
+
+
+(deftest test-1105
+  (let [code1 "let val foo = 99 val bar = 10 in foo - bar end"
+	code2 "let val foo = 99 val bar = 10 in foo * bar end"]
+    (fact "let with two bindings"
+      (eisen= code1) => 89
+      (eisen= code2) => 990)))
+
+
+(deftest test-1110
+  (let [code1 "let val foo = 99; bar = 10; baz = 5 in foo - bar * baz end"]
+    (fact "let with three bindings, single var decl"
+      (eisen= code1) => 49)))
+
+
+(deftest test-1115
+  (let [code1 "let fun foo = 10 in foo end"
+	code2 "let fun foo x = x * x in foo 10 end"
+	code3 "let fun foo x y = x * x + y * y in foo 3 4 end"]
+    (fact "let with fun decls"
+      (eisen= code1) => 10
+      (eisen= code2) => 100
+      (eisen= code3) => 25)))
+
+
+(deftest test-1120
+  (let [code1 "let val foo = 50 fun bar x = x + x in bar foo end"]
+    (fact "let with combined val and fun  bindings"
+      (eisen= code1) => 100)))
+
+
+(deftest test-1125
+  (let [code1 "let val foo = 50; bar = 20 fun up x = x+1 fun dec x = x-1"
+	code2 "  in up foo + dec bar end"]
+    (fact "let with multiple combined val and fun  bindings"
+      (eisen= (str code1 code2)) => 70)))
+
+
+(deftest test-1130
+  (let [code1 "let val foo = 50 in let val bar = 20 in foo * bar end end"]
+    (fact "nested lets"
+      (eisen= code1) => 1000)))

@@ -97,8 +97,7 @@
 	    _   (modify-st right into (cons sym env))
 	    code (trans-expr value)
 	    _   (modify-st right difference (cons sym env))]
-      (let [decl (if (> (count env) 1) 'defcurry 'defn)]
-        (make-right `(~decl ~sym ~env ~code))))))
+      (make-right `(blancas.morph.core/defcurry ~sym ~env ~code)))))
 
 
 (defn trans-identifier
@@ -199,7 +198,7 @@
 (defn trans-let
   "Translates a let expression."
   [ast]
-  (let [env (map #(-> % :name symbol) (:decls ast))]
+  (let [env (map (comp symbol :name) (:decls ast))]
     (monad [decls (seqm (map trans-binding (:decls ast)))
 	    _     (modify-st right into env)
             exprs (seqm (map trans-expr (:exprs ast)))

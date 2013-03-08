@@ -230,8 +230,8 @@ Literal values follow the rules of Java and Clojure."
 (def map-lit
   "Parses a map literal."
   (bind [pos get-position
-	 val (braces (comma-sep (fwd expr)))]
-    (return {:token :map-lit :value val :pos pos})))
+	 val (braces (comma-sep (<*> (fwd expr) (fwd expr))))]
+    (return {:token :map-lit :value (flatten val) :pos pos})))
 
 
 (def re-lit

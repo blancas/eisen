@@ -152,5 +152,11 @@
   (fact "Map literal"
     (let [p1 (eisen "{}")]
       (:value p1)) => {}
-    (let [p1 (eisen "{:k1, 737, :k2, 747, :k3, 757, :k4, 767, :k5, 777, :k6, 787}")]
+    (let [p1 (eisen "{:k1 737, :k2 747, :k3 757, :k4 767, :k5 777, :k6 787}")]
       (:value p1)) => {:k1 737 :k2 747 :k3 757 :k4 767 :k5 777 :k6 787}))
+
+
+(deftest test-0120
+  (fact "Map literal with expressions"
+    (let [p1 (eisen "{:k1 (700 + 37), :k2 (740 + 7 ), (str \"k\" 3) 757}")]
+      (:value p1)) => {:k1 737 :k2 747 "k3" 757}))

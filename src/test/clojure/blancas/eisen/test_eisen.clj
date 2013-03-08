@@ -358,15 +358,14 @@
 (deftest test-0705
   (fact "calling user-defined functions as binary operators"
     (let [_ (eisen "fun sum x y  =  x + y")]
-      (eisen= "3 `sum` 4")) => 7
+      (eisen= "3 .sum. 4")) => 7
     (let [_ (eisen "fun mul x y  =  x * y")]
-      (eisen= "3 `mul` 4")) => 12))
+      (eisen= "3 .mul. 4")) => 12))
 
 
 (deftest test-0705
   (fact "calling lisp functions with non-Eisen names"
-    (eisen= ".+' 3 4") => 7
-    (eisen= "3 `+'` 4") => 7))
+    (eisen= "`+'` 3 4") => 7))
 
 
 ;; +-------------------------------------------------------------+

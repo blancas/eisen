@@ -120,7 +120,7 @@ Literal values follow the rules of Java and Clojure."
 (def lisp-name
   "Parses a lisp name between dots to avoid interference with eisen."
   (bind [pos get-position
-	 val (lexeme (>> (sym* \.) lisp-id))]
+	 val (lexeme (between (sym* \`) lisp-id))]
     (return {:token :identifier :value val :pos pos})))
 
 
@@ -134,6 +134,13 @@ Literal values follow the rules of Java and Clojure."
    if it refers to a function."
   (bind [pos get-position arg eisen-name]
     (return (assoc arg :token :id-arg))))
+
+
+(def oper-id
+  "Parses a simple name that can be both a function name
+   and also dotted infix binary operator."
+  (bind [pos get-position val (<+> letter (many alpha-num))]
+    (return {:token :identifier :value val :pos pos})))
 
 
 ;; Custom parsing of numeric literals for reading function arguments.
@@ -303,10 +310,10 @@ Literal values follow the rules of Java and Clojure."
        (one-of  "+-")))
 
 
-(def back-op
-  "Parses the backquoted name of an arity-2 function as a binary
-   operator; for eisen or lisp functions."
-  (lexer (lexeme (between (sym* \`) (sym* \`) lisp-id))))
+(def dot-op
+  "Parses the dot-bracketed name of an arity-2 function as a binary
+   operator. Intended for Eisen functions with simple names."
+  (lexer (lexeme (between (sym* \.) oper-id))))
 
 
 (def mul-op
@@ -383,7 +390,7 @@ Literal values follow the rules of Java and Clojure."
 
 (def power  (chainr1* :BINOP  factor pow-op))
 (def unary  (prefix1* :UNIOP  power  uni-op))
-(def fbin   (chainl1* :BINOP  unary  back-op))
+(def fbin   (chainl1* :BINOP  unary  dot-op))
 (def term   (chainl1* :BINOP  fbin   mul-op))
 (def sum    (chainl1* :BINOP  term   add-op))
 (def const  (chainr1* :BINOP  sum    cons-op))

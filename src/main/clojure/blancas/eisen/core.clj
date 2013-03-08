@@ -72,3 +72,39 @@
    intended for testing at the REPL."
   ([f] (eisenf= f "UTF-8"))
   ([f en] (eisen= (f->s f en) f)))
+
+
+(defn read-eisen
+  "Reads one or more lines of Eisen code; p1 is the initial
+   prompt and p2 is the line-continuation prompt. A single
+   new-line character ends the input."
+  [p1 p2]
+  (print (str p1 \space))
+  (.flush *out*)
+  (loop [line "" s (read-line)]
+    (if (seq s)
+      (do
+        (print (str p2 \space))
+        (.flush *out*)
+        (recur (str line s \newline) (read-line)))
+      (if (= (last line) \newline)
+        (apply str (butlast line))
+        line))))
+
+
+(defn eisen-repl
+  "Imprements a simple Eisen REPL. The primary and line
+   continuation prompts can be supplied as p1 and p2.
+   Called with no arguments will default to : and |.
+   : 3 + 4 <Enter>
+   | <Enter>
+   7
+   : "
+  ([]
+   (eisen-repl ":" ">"))
+  ([p1 p2]
+   (let [code (read-eisen p1 p2)]
+     (when-not (= code "//")
+       (if (seq code) 
+         (println (eisen= code)))
+       (recur p1 p2)))))

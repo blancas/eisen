@@ -38,7 +38,8 @@ Literal values follow the rules of Java and Clojure."
   (assoc lex/haskell-style
     :identifier-start   (<|> lower (sym* \_))
     :identifier-letter  (<|> alpha-num (one-of* "_'?!"))
-    :reserved-names     ["_" "val" "fun" "if" "then" "else" "let" "in" "end"]))
+    :reserved-names     ["_" "val" "fun" "if" "then" "else" "let" "in" "end"
+			 "declare"]))
 
 
 (def rec (lex/make-parsers eisen-style))
@@ -446,8 +447,15 @@ Literal values follow the rules of Java and Clojure."
     (return {:token :fun :name (:value name) :params parm :value val})))
 
 
+(def fwd-decl
+  "Parses a forward declaration."
+  (>> (word "declare")
+      (bind [decls (many1 eisen-name)]
+        (return {:token :fwd :decls decls}))))
+
+
 (def eisen-code
   "Parses one or more declarations, or a single expressions."
   (>> trim
-      (<|> (<$> flatten (many1 (<|> val-decl fun-decl)))
+      (<|> (<$> flatten (many1 (<|> val-decl fun-decl fwd-decl)))
 	   (<$> vector expr))))

@@ -83,9 +83,9 @@
 
 (defn trans-val
   "Translates an AST into a Clojure var definition."
-  [ast]
-  (let [name (symbol (:name ast))]
-    (monad [val (trans-expr (:value ast))]
+  [{:keys [name value]}]
+  (let [name (symbol name)]
+    (monad [val (trans-expr value)]
       (make-right `(def ~name ~val)))))
 
 
@@ -98,6 +98,13 @@
 	    code (trans-expr value)
 	    _   (modify-st right difference (cons sym env))]
       (make-right `(blancas.morph.core/defcurry ~sym ~env ~code)))))
+
+
+(defn trans-fwd
+  "Translates an AST into a Clojure forward declaration."
+  [{:keys [decls]}]
+  (let [names (map (comp symbol :value) decls)]
+    (make-right `(declare ~@names))))
 
 
 (defn trans-identifier
@@ -265,6 +272,7 @@
   [ast]
   (cond (= (:token ast) :val) (trans-val ast)
 	(= (:token ast) :fun) (trans-fun ast)
+	(= (:token ast) :fwd) (trans-fwd ast)
 	:else                 (trans-expr ast)))
 
 

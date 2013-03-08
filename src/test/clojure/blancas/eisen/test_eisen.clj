@@ -514,3 +514,33 @@
     (fact "recursive function in let"
       (eisen= "fact 5") => 120
       (eisen= "fact (-1)") => -1)))
+
+
+;; +-------------------------------------------------------------+
+;; |                    Forward Declarations.                    |
+;; +-------------------------------------------------------------+
+
+
+(deftest test-1200
+  (eisen "declare bar")
+  (eisen "fun foo x = x + bar x")
+  (eisen "fun bar n = n * 10")
+    (fact "forward declaration"
+      (eisen= "foo 5") => 55))
+
+
+(deftest test-1205
+  (eisen "declare bar!")
+  (eisen "fun foo x = x + bar! x")
+  (eisen "fun bar! n = n * 10")
+    (fact "forward declaration"
+      (eisen= "foo 5") => 55))
+
+
+(deftest test-1210
+  (eisen "declare bar! baz?")
+  (eisen "fun foo x = x + bar! x + baz? x")
+  (eisen "fun bar! n = n * 10")
+  (eisen "fun baz? n = n + 10")
+    (fact "forward declaration"
+      (eisen= "foo 5") => 70))

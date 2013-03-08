@@ -136,13 +136,6 @@ Literal values follow the rules of Java and Clojure."
     (return (assoc arg :token :id-arg))))
 
 
-(def oper-id
-  "Parses a simple name that can be both a function name
-   and also dotted infix binary operator."
-  (bind [pos get-position val (<+> letter (many alpha-num))]
-    (return {:token :identifier :value val :pos pos})))
-
-
 ;; Custom parsing of numeric literals for reading function arguments.
 ;; In these cases the parser must not allow a leading sing as part
 ;; of the literal, as it interferes with the overall arithmetic.
@@ -311,9 +304,9 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def dot-op
-  "Parses the dot-bracketed name of an arity-2 function as a binary
-   operator. Intended for Eisen functions with simple names."
-  (lexer (lexeme (between (sym* \.) oper-id))))
+  "Parses a function name as a binary operator as .name."
+  (let [op (<+> (many1 (<|> alpha-num (one-of* "!$*-_+=<>?'"))))]
+    (lexer (lexeme (between (sym* \.) op)))))
 
 
 (def mul-op

@@ -504,3 +504,13 @@
   (let [code1 "let val foo = 50 in let val bar = 20 in foo * bar end end"]
     (fact "nested lets"
       (eisen= code1) => 1000)))
+
+
+(deftest test-1135
+  (let [code1 "fun fact n = if n < 0 then -1 "
+	code2 "else let fun f x = if x == 0 then 1 else x * f (x-1) "
+	code3 "in f n end"]
+    (eisen (str code1 code2 code3))
+    (fact "recursive function in let"
+      (eisen= "fact 5") => 120
+      (eisen= "fact (-1)") => -1)))

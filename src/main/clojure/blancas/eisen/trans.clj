@@ -173,22 +173,22 @@
 
 
 (defn- val-binding
-  "Parses a val binding."
+  "Translates a val binding."
   [ast]
   (let [name (symbol (:name ast))]
     (monad [val (trans-expr (:value ast))]
-      (make-right [name val]))))
+      (make-right (list name [] val)))))
 
 
 (defn- fun-binding
-  "Parses a function binding."
+  "Translates a function binding."
   [{:keys [name params value]}]
   (let [sym (symbol name)]
     (monad [env (trans-exprs params)
 	    _   (modify-st right into (cons sym env))
 	    code (trans-expr value)
 	    _   (modify-st right difference (cons sym env))]
-      (make-right [sym (list 'blancas.morph.core/mcf env code)]))))
+      (make-right (list sym env code)))))
 
 
 (defn- trans-binding
@@ -207,7 +207,7 @@
 	    _     (modify-st right into env)
             exprs (seqm (map trans-expr (:exprs ast)))
 	    _     (modify-st right difference env)]
-      (make-right `(let [~@(apply concat decls)] ~@exprs)))))
+      (make-right `(letfn [~@decls] ~@exprs)))))
 
 
 (defn trans-expr

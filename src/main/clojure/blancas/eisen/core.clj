@@ -75,11 +75,11 @@
 
 
 (defn read-eisen
-  "Reads one or more lines of Eisen code; p1 is the initial
-   prompt and p2 is the line-continuation prompt. A single
-   new-line character ends the input."
-  [p1 p2]
-  (print (str p1 \space))
+  "Reads one or more lines of Eisen code; nsp tells whether to print
+   the current namespace; p1 is the initial prompt and p2 is the
+   line-continuation prompt. A single new-line character ends the input."
+  [nsp p1 p2]
+  (print (str (if nsp (ns-name *ns*) "") p1 \space))
   (.flush *out*)
   (loop [line "" s (read-line)]
     (if (seq s)
@@ -93,18 +93,27 @@
 
 
 (defn eisen-repl
-  "Imprements a simple Eisen REPL. The primary and line
-   continuation prompts can be supplied as p1 and p2.
-   Called with no arguments will default to : and |.
-   : 3 + 4 <Enter>
-   | <Enter>
-   7
-   : "
+  "Implements a simple Eisen REPL. Uses (read-eisen) to read code
+   until the user types // followed by Enter. It evaluates each
+   block of code and prints the result.
+
+   If called with no arguments, it will default to printing the
+   current namespace, followed by : and using > as a continuation
+   prompt; nsp tells whether to print the current namespace; p1 is
+   the initial prompt and p2 is the line-continuation prompt.
+
+   user=> (eisen-repl)
+   user: 3 + 4 <Enter>
+   > <Enter>
+   >
+   user: //
+   > <Enter>
+   user=>"
   ([]
-   (eisen-repl ":" ">"))
-  ([p1 p2]
-   (let [code (read-eisen p1 p2)]
+   (eisen-repl true ":" ">"))
+  ([nsp p1 p2]
+   (let [code (read-eisen nsp p1 p2)]
      (when-not (= code "//")
        (if (seq code) 
          (println (eisen= code)))
-       (recur p1 p2)))))
+       (recur nsp p1 p2)))))

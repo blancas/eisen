@@ -113,14 +113,14 @@ Literal values follow the rules of Java and Clojure."
 (def lisp-id
   "Parses a lisp id with extra characters."
   (let [fst (<|> letter (one-of* "!$*-_+=<>?"))
-        rst (<|> fst digit (sym* \'))]
+        rst (<|> fst digit (one-of* "'./"))]
     (<+> fst (many rst))))
 
 
 (def lisp-name
   "Parses a lisp name between dots to avoid interference with eisen."
   (bind [pos get-position
-	 val (lexeme (between (sym* \.) (sym* \.) lisp-id))]
+	 val (lexeme (>> (sym* \.) lisp-id))]
     (return {:token :identifier :value val :pos pos})))
 
 

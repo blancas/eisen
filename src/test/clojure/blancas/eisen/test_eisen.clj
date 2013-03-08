@@ -365,7 +365,7 @@
 
 (deftest test-0705
   (fact "calling lisp functions with non-Eisen names"
-    (eisen= ".+'. 3 4") => 7
+    (eisen= ".+' 3 4") => 7
     (eisen= "3 `+'` 4") => 7))
 
 

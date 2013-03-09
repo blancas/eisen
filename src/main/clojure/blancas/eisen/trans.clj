@@ -202,9 +202,9 @@
   [{:keys [name params value]}]
   (let [sym (symbol name)]
     (monad [env (trans-exprs params)
-	    _   (modify-st right into (cons sym env))
+	    _   (modify-st right into env)
 	    code (trans-expr value)
-	    _   (modify-st right difference (cons sym env))]
+	    _   (modify-st right difference env)]
       (make-right (list sym env code)))))
 
 
@@ -220,8 +220,8 @@
   "Translates a let expression."
   [ast]
   (let [env (map (comp symbol :name) (:decls ast))]
-    (monad [decls (seqm (map trans-binding (:decls ast)))
-	    _     (modify-st right into env)
+    (monad [_     (modify-st right into env)
+	    decls (seqm (map trans-binding (:decls ast)))
             exprs (seqm (map trans-expr (:exprs ast)))
 	    _     (modify-st right difference env)]
       (make-right `(letfn [~@decls] ~@exprs)))))

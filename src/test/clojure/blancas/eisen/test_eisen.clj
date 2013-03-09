@@ -521,6 +521,20 @@
       (eisen= "fact (-1)") => -1)))
 
 
+(deftest test-1140
+  (let [code1 "let val foo = 99; bar = foo; baz = bar in baz+1 end"]
+    (fact "let with three bindings, with reference to previous ones"
+      (eisen= code1) => 100)))
+
+
+(deftest test-1145
+  (let [code1 "let fun foo x = if x > 0 then bar (x-1) else 0"
+	code2 "    fun bar x = if x > 0 then foo (x-1) else 0"
+	code3 "    in foo 5 end"]
+    (fact "let with mutually recursive functions"
+      (eisen= (str code1 code2 code3)) => 0)))
+
+
 ;; +-------------------------------------------------------------+
 ;; |                    Forward Declarations.                    |
 ;; +-------------------------------------------------------------+

@@ -52,6 +52,14 @@
     (str loc (apply format fmt more))))
 
 
+(defn clazz?
+  "Tests if a symbol refers to a Java class."
+  [s]
+  (try
+    (let [clazz (eval s)] (class? clazz))
+    (catch Throwable t false)))
+
+
 (defn function?
   "Tests if the var is a function or macro. If there's no root
    binding we assume that is a forward-declared function."
@@ -111,14 +119,16 @@
   "Translates a reference to an identifier."
   [{:keys [value pos]}]
   (let [sym-name (symbol value)]
-    (monad [env (get-st right)]
-      (if (contains? env sym-name)
-        (make-right (make-ref sym-name))
-	(if-let [var-inst (resolve sym-name)]
-          (if (function? var-inst)
-	    (make-right `(~sym-name))
-	    (make-right sym-name))
-          (make-left (error pos "undeclared identifier: %s" value)))))))
+    (if (clazz? sym-name)
+      (make-right sym-name)
+      (monad [env (get-st right)]
+        (if (contains? env sym-name)
+          (make-right (make-ref sym-name))
+	  (if-let [var-inst (resolve sym-name)]
+            (if (function? var-inst)
+	      (make-right `(~sym-name))
+	      (make-right sym-name))
+            (make-left (error pos "undeclared identifier: %s" value))))))))
 
 
 (defn trans-idarg

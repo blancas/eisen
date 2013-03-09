@@ -15,7 +15,7 @@ comment-end          -}
 comment-line         --
 nested-comments      Yes
 identifier-start     Lowercase or _
-identifier-letter    Alphanumeric or _ ' ? !
+identifier-letter    Alphanumeric or _ ' ? ! . /
 reserved-names       None
 case-sensitive       Yes
 line-continuation    Backslash

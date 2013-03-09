@@ -339,6 +339,11 @@
       (eisen= "op01-1")) => 98))
 
 
+(deftest test-0605
+  (fact "referencing a Java class"
+    (eisen= "java.lang.String") => java.lang.String))
+
+
 ;; +-------------------------------------------------------------+
 ;; |                     Calling Functions.                      |
 ;; +-------------------------------------------------------------+

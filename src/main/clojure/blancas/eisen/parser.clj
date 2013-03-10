@@ -263,12 +263,21 @@ Literal values follow the rules of Java and Clojure."
        (parens (fwd expr))))
 
 
+(defn macro?
+  "Test if a string is the name of a macro; returns true or nil."
+  [s]
+  (if-let [var (resolve (symbol s))]
+    (if (bound? var)
+      (:macro (meta var)))))
+
+
 (def val-call
-  "Parses a reference to a value or a function call."
+  "Parses a reference to a value, calling a function, or calling a macro."
   (bind [name eisen-name args (many argument)]
     (if (empty? args)
-      (return name)  
-      (return {:token :fun-call :value (into [name] args)}))))
+      (return name)
+      (let [call (if (macro? (:value name)) :macro-call :fun-call)]
+        (return {:token call :value (into [name] args)})))))
 
 
 (def factor

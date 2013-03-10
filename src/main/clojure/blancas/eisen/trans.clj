@@ -160,6 +160,14 @@
           (make-left (error pos "undeclared identifier: %s" value)))))))
 
 
+(defn trans-macrocall
+  "Translates a call to a macro."
+  [name args]
+  (let [sym-name (symbol (:value name))]
+    (monad [lst (seqm (map trans-expr args))]
+      (make-right (list* sym-name lst)))))
+
+
 (defn trans-binop
   "Translates the application of a binary operator."
   [ast]
@@ -244,6 +252,9 @@
 
     :fun-call    (let [val (:value ast)]
                    (trans-funcall (first val) (rest val)))
+
+    :macro-call  (let [val (:value ast)]
+                   (trans-macrocall (first val) (rest val)))
 
     :list-lit    (monad [vals (trans-exprs (:value ast))]
                    (make-right `(list ~@vals)))

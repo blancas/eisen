@@ -38,8 +38,8 @@ Literal values follow the rules of Java and Clojure."
   (assoc lex/haskell-style
     :identifier-start   (<|> lower (sym* \_))
     :identifier-letter  (<|> alpha-num (one-of* "_'?!./"))
-    :reserved-names     ["_" "val" "fun" "if" "then" "else" "let" "in" "end"
-			 "declare"]))
+    :reserved-names     ["_" "declare" "val" "fun" "fn" "if" "then" "else"
+			 "let" "letrec" "in" "end"]))
 
 
 (def rec (lex/make-parsers eisen-style))
@@ -242,6 +242,15 @@ Literal values follow the rules of Java and Clojure."
            (return {:token :re-lit :value (read-string val) :pos pos})))))
 
 
+(def fun-lit
+  "Parses a function literal definition."
+  (bind [_     (word "fn")
+	 parm  (many id-formal)
+	 _     (word "=>")
+	 val   expr]
+    (return {:token :fun-lit :params parm :value val})))
+
+
 (def argument
   "An argument to a function call; this does not include a function call
    directly, but only through an expression in parenthesis."
@@ -433,9 +442,20 @@ Literal values follow the rules of Java and Clojure."
     (return {:token :let-expr :decls decls :exprs exprs})))
 
 
+(def letrec
+  "Parses a letrec expression. Bindings are functions that
+   can be recursive or mutually recursive."
+  (bind [_ (word "letrec")
+	 decls (<$> flatten (many (<|> val-decl fun-decl)))
+	 _ (word "in")
+	 exprs (many expr)
+	 _ (word "end")]
+    (return {:token :letrec-expr :decls decls :exprs exprs})))
+
+
 (def expr
   "Parses an Eisen expression."
-  (<|> seqex condex letex orex))
+  (<|> seqex condex letex letrec fun-lit orex))
 
 
 (def val-decl

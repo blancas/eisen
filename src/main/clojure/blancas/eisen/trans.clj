@@ -202,7 +202,7 @@
   [ast]
   (let [name (symbol (:name ast))]
     (monad [val (trans-expr (:value ast))]
-      (make-right (list name [] val)))))
+      (make-right [name val]))))
 
 
 (defn- fun-binding
@@ -213,7 +213,7 @@
 	    _   (modify-st right into env)
 	    code (trans-expr value)
 	    _   (modify-st right difference env)]
-      (make-right (list sym env code)))))
+      (make-right [sym `(blancas.morph.core/mcf ~env ~code)]))))
 
 
 (defn- trans-binding
@@ -232,7 +232,55 @@
 	    decls (seqm (map trans-binding (:decls ast)))
             exprs (seqm (map trans-expr (:exprs ast)))
 	    _     (modify-st right difference env)]
+      (make-right `(let [~@(apply concat decls)] ~@exprs)))))
+
+
+(defn- val-binding-letrec
+  "Translates a val binding in a letrec expression."
+  [ast]
+  (let [name (symbol (:name ast))]
+    (monad [val (trans-expr (:value ast))]
+      (make-right (list name [] val)))))
+
+
+(defn- fun-binding-letrec
+  "Translates a function binding in a letrec expression."
+  [{:keys [name params value]}]
+  (let [sym (symbol name)]
+    (monad [env (trans-exprs params)
+	    _   (modify-st right into env)
+	    code (trans-expr value)
+	    _   (modify-st right difference env)]
+      (make-right (list sym env code)))))
+
+
+(defn- trans-binding-letrec
+  "Parses a val or fun binding in a letrec expression."
+  [ast]
+  (if (= (:token ast) :val)
+    (val-binding-letrec ast)
+    (fun-binding-letrec ast)))
+
+
+(defn trans-letrec
+  "Translates a letrec expression."
+  [ast]
+  (let [env (map (comp symbol :name) (:decls ast))]
+    (monad [_     (modify-st right into env)
+	    decls (seqm (map trans-binding-letrec (:decls ast)))
+            exprs (seqm (map trans-expr (:exprs ast)))
+	    _     (modify-st right difference env)]
       (make-right `(letfn [~@decls] ~@exprs)))))
+
+
+(defn trans-funlit
+  "Translates an AST into a Clojure anonymous function."
+  [{:keys [params value]}]
+  (monad [env (trans-exprs params)
+	  _   (modify-st right into env)
+	  code (trans-expr value)
+	  _   (modify-st right difference env)]
+    (make-right `(blancas.morph.core/mcf ~env ~code))))
 
 
 (defn trans-expr
@@ -277,7 +325,11 @@
 
     :cond-expr   (trans-cond ast)
 
-    :let-expr    (trans-let ast)))
+    :let-expr    (trans-let ast)
+
+    :letrec-expr (trans-letrec ast)
+
+    :fun-lit     (trans-funlit ast)))
 
 
 (defn trans-exprs

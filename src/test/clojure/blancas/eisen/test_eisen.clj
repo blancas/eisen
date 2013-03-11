@@ -512,27 +512,41 @@
 
 
 (deftest test-1135
-  (let [code1 "fun fact n = if n < 0 then -1 "
-	code2 "else let fun f x = if x == 0 then 1 else x * f (x-1) "
-	code3 "in f n end"]
-    (eisen (str code1 code2 code3))
-    (fact "recursive function in let"
-      (eisen= "fact 5") => 120
-      (eisen= "fact (-1)") => -1)))
-
-
-(deftest test-1140
   (let [code1 "let val foo = 99; bar = foo; baz = bar in baz+1 end"]
     (fact "let with three bindings, with reference to previous ones"
       (eisen= code1) => 100)))
 
 
-(deftest test-1145
-  (let [code1 "let fun foo x = if x > 0 then bar (x-1) else 0"
-	code2 "    fun bar x = if x > 0 then foo (x-1) else 0"
-	code3 "    in foo 5 end"]
-    (fact "let with mutually recursive functions"
+;; +-------------------------------------------------------------+
+;; |                      Let Expressions.                       |
+;; +-------------------------------------------------------------+
+
+
+(deftest test-1200
+  (let [code1 "fun fact n = if n < 0 then -1 "
+	code2 "else letrec fun f x = if x == 0 then 1 else x * f (x-1) "
+	code3 "in f n end"]
+    (eisen (str code1 code2 code3))
+    (fact "recursive function in letrec"
+      (eisen= "fact 5") => 120
+      (eisen= "fact (-1)") => -1)))
+
+
+(deftest test-1205
+  (let [code1 "letrec fun foo x = if x > 0 then bar (x-1) else 0"
+	code2 "       fun bar x = if x > 0 then foo (x-1) else 0"
+	code3 "       in foo 5 end"]
+    (fact "letrec with mutually recursive functions"
       (eisen= (str code1 code2 code3)) => 0)))
+
+
+(deftest test-1210
+  (let [code1 "letrec val zap = 0 "
+        code2 "       fun foo x = if x > zap then bar (x-1) else zap"
+	code3 "       fun bar x = if x > 0 then foo (x-1) else zap"
+	code4 "       in foo 5 end"]
+    (fact "letrec with mutually recursive functions, using a val decl"
+      (eisen= (str code1 code2 code3 code4)) => 0)))
 
 
 ;; +-------------------------------------------------------------+
@@ -540,7 +554,7 @@
 ;; +-------------------------------------------------------------+
 
 
-(deftest test-1200
+(deftest test-1300
   (eisen "declare bar")
   (eisen "fun foo x = x + bar x")
   (eisen "fun bar n = n * 10")
@@ -548,7 +562,7 @@
       (eisen= "foo 5") => 55))
 
 
-(deftest test-1205
+(deftest test-1305
   (eisen "declare bar!")
   (eisen "fun foo x = x + bar! x")
   (eisen "fun bar! n = n * 10")
@@ -556,10 +570,27 @@
       (eisen= "foo 5") => 55))
 
 
-(deftest test-1210
+(deftest test-1310
   (eisen "declare bar! baz?")
   (eisen "fun foo x = x + bar! x + baz? x")
   (eisen "fun bar! n = n * 10")
   (eisen "fun baz? n = n + 10")
     (fact "forward declaration"
       (eisen= "foo 5") => 70))
+
+
+;; +-------------------------------------------------------------+
+;; |                   Anonymous Functions.                      |
+;; +-------------------------------------------------------------+
+
+
+(deftest test-1400
+  (let [code "let val sq = fn x => x * x in sq 9 end"]
+    (fact "use a fn value in a let expression"
+      (eisen= code) => 81)))
+
+
+(deftest test-1405
+  (eisen "val dup = fn x => x + x")
+  (fact "use a fn value in a val declaration"
+    (eisen= "dup 9") => 18))

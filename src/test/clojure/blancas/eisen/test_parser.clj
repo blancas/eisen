@@ -167,15 +167,21 @@
 ;; +-------------------------------------------------------------+
 
 (deftest test-0300
-  (eisen "val val1 {- why foo? -} = 787")
-  (fact "Comments in {- xxx -}"
+  (eisen "val val1 (* why foo? *) = 787")
+  (fact "Comments in (* xxx *)"
     (eisen= "val1") => 787))
 
 
 (deftest test-0305
-  (eisen "val val2 = (4 * {- is this right? -} (3 + 2))")
-  (fact "Comments in {- xxx -}"
+  (eisen "val val2 = (4 * (* is this right? *) (3 + 2))")
+  (fact "Comments in (* xxx *)"
     (eisen= "val2") => 20))
+
+
+(deftest test-0310
+  (eisen "val val1 (* why (* not too late! *) foo? *) = 787")
+  (fact "nested comments: (* x (* x *) x *)"
+    (eisen= "val1") => 787))
 
 
 (deftest test-0350

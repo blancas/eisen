@@ -10,8 +10,8 @@
 
 The Eisen Lexer is configured with the following settings:
 
-comment-start        {-
-comment-end          -}
+comment-start        (*
+comment-end          *)
 comment-line         --
 nested-comments      Yes
 identifier-start     Lowercase or _
@@ -35,7 +35,11 @@ Literal values follow the rules of Java and Clojure."
 
 (def eisen-style
   "Lexical settings for the Eisen language."
-  (assoc lex/haskell-style
+  (assoc lex/basic-def
+    :comment-start       "(*"
+    :comment-end         "*)"
+    :comment-line        "--"
+    :nested-comments     true
     :identifier-start   (<|> lower (sym* \_))
     :identifier-letter  (<|> alpha-num (one-of* "_'?!./"))
     :reserved-names     ["_" "declare" "val" "fun" "fn" "if" "then" "else"

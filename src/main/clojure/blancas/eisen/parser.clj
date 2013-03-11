@@ -42,8 +42,8 @@ Literal values follow the rules of Java and Clojure."
     :nested-comments     true
     :identifier-start   (<|> lower (sym* \_))
     :identifier-letter  (<|> alpha-num (one-of* "_'?!./"))
-    :reserved-names     ["_" "declare" "val" "fun" "fn" "if" "then" "else"
-			 "let" "letrec" "in" "end"]))
+    :reserved-names     ["module" "import" "declare" "val" "fun" "fn" "_"
+			 "if" "then" "else" "let" "letrec" "in" "end"]))
 
 
 (def rec (lex/make-parsers eisen-style))
@@ -116,7 +116,7 @@ Literal values follow the rules of Java and Clojure."
 
 (def lisp-id
   "Parses a lisp id with extra characters."
-  (let [fst (<|> letter (one-of* "!$*-_+=<>?"))
+  (let [fst (<|> letter (one-of* "!$*-_+=<>?|"))
         rst (<|> fst digit (one-of* "'./"))]
     (<+> fst (many rst))))
 
@@ -487,8 +487,35 @@ Literal values follow the rules of Java and Clojure."
         (return {:token :fwd :decls decls}))))
 
 
+(def mod-decl
+  "Parses a module declaration."
+  (bind [name (>> (word "module") (lexeme lisp-id))]
+    (return {:token :mod :name name})))
+
+
+(def qualifier
+  "Parses an import qualifier."
+  (<|> (>> (word "as")
+	   (bind [name (lexeme lisp-id)]
+	     (return {:token :as :name name})))
+       (>> (word "only")
+	   (bind [value (brackets (comma-sep eisen-name))]
+	     (return {:token :only :value value})))
+       (>> (word "hiding")
+	   (bind [value (brackets (comma-sep eisen-name))]
+	     (return {:token :hiding :value value})))))
+
+
+(def imp-decl
+  "Parses an import declaration."
+  (>> (word "import")
+      (semi-sep1
+        (bind [name identifier qualify (optional qualifier)]
+          (return {:token :imp :name (:value name) :qualify qualify})))))
+
+
 (def eisen-code
   "Parses one or more declarations, or a single expressions."
   (>> trim
-      (<|> (<$> flatten (many1 (<|> val-decl fun-decl fwd-decl)))
+      (<|> (<$> flatten (many1 (<|> mod-decl imp-decl val-decl fun-decl fwd-decl)))
 	   (<$> vector expr))))

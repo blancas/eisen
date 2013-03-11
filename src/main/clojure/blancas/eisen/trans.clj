@@ -89,6 +89,18 @@
 (declare trans-expr trans-exprs)
 
 
+(defn trans-mod
+  "Translates an AST into a Clojure namespace call."
+  [ast]
+  (let [sym-name (symbol (:name ast))]
+    (make-right `(ns sym-name))))
+
+
+(defn trans-imp
+  "Translates an AST into a Clojure use or require call."
+  [ast] ())
+
+
 (defn trans-val
   "Translates an AST into a Clojure var definition."
   [{:keys [name value]}]
@@ -343,10 +355,13 @@
 (defn trans-ast
   "Translates a collection of AST maps into unevaluated Clojure forms."
   [ast]
-  (cond (= (:token ast) :val) (trans-val ast)
-	(= (:token ast) :fun) (trans-fun ast)
-	(= (:token ast) :fwd) (trans-fwd ast)
-	:else                 (trans-expr ast)))
+  (case (:token ast)  
+    :val  (trans-val ast)
+    :fun  (trans-fun ast)
+    :fwd  (trans-fwd ast)
+    :mod  (trans-mod ast)
+    :imp  (trans-imp ast)
+	  (trans-expr ast)))
 
 
 (defn eval-ast

@@ -555,9 +555,9 @@
 
 
 (deftest test-1300
-  (eisen "declare bar")
-  (eisen "fun foo x = x + bar x")
-  (eisen "fun bar n = n * 10")
+  (eisen "declare baz")
+  (eisen "fun foo x = x + baz x")
+  (eisen "fun baz n = n * 10")
     (fact "forward declaration"
       (eisen= "foo 5") => 55))
 

@@ -160,3 +160,25 @@
   (fact "Map literal with expressions"
     (let [p1 (eisen "{:k1 (700 + 37), :k2 (740 + 7 ), (str \"k\" 3) 757}")]
       (:value p1)) => {:k1 737 :k2 747 "k3" 757}))
+
+
+;; +-------------------------------------------------------------+
+;; |                          Comments.                          |
+;; +-------------------------------------------------------------+
+
+(deftest test-0300
+  (eisen "val val1 {- why foo? -} = 787")
+  (fact "Comments in {- xxx -}"
+    (eisen= "val1") => 787))
+
+
+(deftest test-0305
+  (eisen "val val2 = (4 * {- is this right? -} (3 + 2))")
+  (fact "Comments in {- xxx -}"
+    (eisen= "val2") => 20))
+
+
+(deftest test-0350
+  (eisen "val val3 = 787 -- why foo?\nval bar = 747")
+  (fact "line comments with: --"
+	(eisen= "bar") => 747))

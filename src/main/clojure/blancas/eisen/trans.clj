@@ -98,26 +98,34 @@
 
 (defn trans-imp
   "Translates an AST into a Clojure use or require call."
-  [ast] ())
+  [{:keys [name qualify]}]
+  (let [sym-name (symbol name)]
+    (if (nil? qualify)
+      (make-right `(use '~sym-name))
+      (let [names (fn [x] (map (comp symbol :value) (:value x)))]
+        (case (:token qualify)
+          :as   (make-right `(require '[~sym-name :as ~(symbol (:value qualify))]))
+	  :only (make-right `(use '[~sym-name :only ~(names qualify)]))
+	  :hide (make-right `(use '[~sym-name :exclude ~(names qualify)])))))))
 
 
 (defn trans-val
   "Translates an AST into a Clojure var definition."
   [{:keys [name value]}]
-  (let [name (symbol name)]
+  (let [sym-name (symbol name)]
     (monad [val (trans-expr value)]
-      (make-right `(def ~name ~val)))))
+      (make-right `(def ~sym-name ~val)))))
 
 
 (defn trans-fun
   "Translates an AST into a Clojure function definition."
   [{:keys [name params value]}]
-  (let [sym (symbol name)]
+  (let [sym-name (symbol name)]
     (monad [env (trans-exprs params)
-	    _   (modify-st right into (cons sym env))
+	    _   (modify-st right into (cons sym-name env))
 	    code (trans-expr value)
-	    _   (modify-st right difference (cons sym env))]
-      (make-right `(blancas.morph.core/defcurry ~sym ~env ~code)))))
+	    _   (modify-st right difference (cons sym-name env))]
+      (make-right `(blancas.morph.core/defcurry ~sym-name ~env ~code)))))
 
 
 (defn trans-fwd

@@ -497,13 +497,13 @@ Literal values follow the rules of Java and Clojure."
   "Parses an import qualifier."
   (<|> (>> (word "as")
 	   (bind [name (lexeme lisp-id)]
-	     (return {:token :as :name name})))
+	     (return {:token :as :value name})))
        (>> (word "only")
 	   (bind [value (brackets (comma-sep eisen-name))]
 	     (return {:token :only :value value})))
-       (>> (word "hiding")
+       (>> (word "hide")
 	   (bind [value (brackets (comma-sep eisen-name))]
-	     (return {:token :hiding :value value})))))
+	     (return {:token :hide :value value})))))
 
 
 (def imp-decl

@@ -93,7 +93,7 @@
   "Translates an AST into a Clojure namespace call."
   [ast]
   (let [sym-name (symbol (:name ast))]
-    (make-right `(ns sym-name))))
+    (make-right `(ns ~sym-name))))
 
 
 (defn trans-imp

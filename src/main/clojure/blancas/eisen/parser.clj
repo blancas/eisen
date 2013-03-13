@@ -167,10 +167,17 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def id-arg
-  "Parses an identifier as an argument; as such it won't be called
-   if it refers to a function."
+  "Parses an identifier as an argument. It will be translated as
+   a Clojure symbol, and is expected to have been declared."
   (bind [pos get-position arg eisen-name]
     (return (assoc arg :token :id-arg))))
+
+
+(def sym-arg
+  "Parses a symbol as an argument for macros. It will be translated
+   as a Clojure symbol; need not have been declared."
+  (bind [pos get-position arg eisen-name]
+    (return (assoc arg :token :sym-arg))))
 
 
 ;; +-------------------------------------------------------------+

@@ -333,7 +333,8 @@
      :comma    :colon     :dot        :keyword  :re-lit)
                  (make-right (:value ast))
 
-    :id-formal   (make-right (-> ast :value symbol))
+    (:id-formal :sym-arg)
+		 (make-right (-> ast :value symbol))
 
     :id-arg      (trans-idarg ast)
 

@@ -16,6 +16,27 @@
 
 
 ;; +-------------------------------------------------------------+
+;; |                       Extensibility.                        |
+;; +-------------------------------------------------------------+
+
+
+(def expr-trans (atom {}))  ;; User-defined table of expression ranslators.
+(def decl-trans (atom {}))  ;; User-defined table of declaration translators.
+
+
+(defn add-expr-trans
+  "Adds a translator function from an expression AST to Clojure code,
+   assigned to the supplied key."
+  [key trans] (swap! expr-trans assoc key trans))
+
+
+(defn add-decl-trans
+  "Adds a translator function from a declaration AST to Clojure code,
+   assigned to the supplied key."
+  [key trans] (swap! expr-trans assoc key trans))
+
+
+;; +-------------------------------------------------------------+
 ;; |                    StateT Either monad.                     |
 ;; +-------------------------------------------------------------+
 
@@ -349,7 +370,13 @@
 
     :letrec-expr (trans-letrec ast)
 
-    :fun-lit     (trans-funlit ast)))
+    :fun-lit     (trans-funlit ast)
+
+    ;; User-defined expression translator.
+
+    (if-let [trans ((:token ast) @expr-trans)]
+      (trans ast)
+      (make-left ast))))
 
 
 (defn trans-exprs
@@ -363,13 +390,17 @@
 (defn trans-ast
   "Translates a collection of AST maps into unevaluated Clojure forms."
   [ast]
-  (case (:token ast)  
-    :val  (trans-val ast)
-    :fun  (trans-fun ast)
-    :fwd  (trans-fwd ast)
-    :mod  (trans-mod ast)
-    :imp  (trans-imp ast)
-	  (trans-expr ast)))
+  (let [token (:token ast)]
+    (case (:token ast)  
+      :val  (trans-val ast)
+      :fun  (trans-fun ast)
+      :fwd  (trans-fwd ast)
+      :mod  (trans-mod ast)
+      :imp  (trans-imp ast)
+      ;; User-defined expression translator.
+      (if-let [trans (token @decl-trans)]
+	(trans ast)
+	(trans-expr ast)))))
 
 
 (defn eval-ast

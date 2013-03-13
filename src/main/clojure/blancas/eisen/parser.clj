@@ -40,8 +40,8 @@ Literal values follow the rules of Java and Clojure."
 
 
 (defn add-reserved
-  "Adds an Eisen reserved word."
-  [name] (swap! reserved conj name))
+  "Adds the Eisen reserved word in the supplied collection."
+  [coll] (swap! reserved into coll))
 
 
 (defn add-expr

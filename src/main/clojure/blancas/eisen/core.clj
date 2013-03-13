@@ -117,3 +117,43 @@
        (if (seq code) 
          (println (eisen= code)))
        (recur nsp p1 p2)))))
+
+
+(defn add-expression
+  "Extends Eisen with the ability to parse and translate
+   a new type of expression. Parameters:
+
+   token   A keyword that identifies the translator.
+
+   parser  A Kern parser that produces an Eisen AST, which is a
+           map with a :token field whose value is token (above).
+           Any other fields collect data for the translator.
+
+   trans   A function that translates an AST to Clojure code
+           using any data produced by the parser.
+
+   words   Any words to be reserved for this parser's syntax."
+  [token parser trans & words]
+  (blancas.eisen.parser/add-expr parser)
+  (blancas.eisen.trans/add-expr-trans token trans)
+  (blancas.eisen.parser/add-reserved words))
+
+
+(defn add-declaration
+  "Extends Eisen with the ability to parse and translate
+   a new type of top-level declaration. Parameters:
+
+   token   A keyword that identifies the translator.
+
+   parser  A Kern parser that produces an Eisen AST, which is a
+           map with a :token field whose value is token (above).
+           Any other fields collect data for the translator.
+
+   trans   A function that translates an AST to Clojure code
+           using any data produced by the parser.
+
+   words   Any words to be reserved for this parser's syntax."
+  [token parser trans & words]
+  (blancas.eisen.parser/add-decl parser)
+  (blancas.eisen.trans/add-decl-trans token trans)
+  (blancas.eisen.parser/add-reserved words))

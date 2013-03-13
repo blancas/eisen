@@ -34,12 +34,24 @@ Literal values follow the rules of Java and Clojure."
 ;; +-------------------------------------------------------------+
 
 
-(def reserved (atom #{}))
+(def reserved (atom #{}))  ;; User-defined reserved words.
+(def expr-lst (atom ()))   ;; User-defined expression parsers.
+(def decl-lst (atom ()))   ;; User-defined declaration parsers.
 
 
 (defn add-reserved
   "Adds an Eisen reserved word."
-  [name] (swap! conj name))
+  [name] (swap! reserved conj name))
+
+
+(defn add-expr
+  "Adds an Eisen expression."
+  [expr] (swap! expr-lst conj expr))
+
+
+(defn add-decl
+  "Adds an Eisen declaration."
+  [decl] (swap! decl-lst conj decl))
 
 
 ;; +-------------------------------------------------------------+
@@ -496,7 +508,9 @@ Literal values follow the rules of Java and Clojure."
 
 (def expr
   "Parses an Eisen expression."
-  (<|> seqex condex letex letrec fun-lit orex))
+  (bind [_ trim]
+    (let [basic (list seqex condex letex letrec fun-lit orex)]
+      (apply <|> (concat @expr-lst basic)))))
 
 
 ;; +-------------------------------------------------------------+
@@ -558,6 +572,7 @@ Literal values follow the rules of Java and Clojure."
 
 (def eisen-code
   "Parses one or more declarations, or a single expressions."
-  (>> trim
-      (<|> (<$> flatten (many1 (<|> mod-decl imp-decl val-decl fun-decl fwd-decl)))
-	   (<$> vector expr))))
+  (bind [_ trim]
+    (let [basic (list mod-decl imp-decl fwd-decl val-decl fun-decl)]
+      (<|> (<$> flatten (many1 (apply <|> (concat @decl-lst basic))))
+	   (<$> vector expr)))))

@@ -230,6 +230,97 @@ Literal values follow the rules of Java and Clojure."
 
 
 ;; +-------------------------------------------------------------+
+;; |                 Operators for Expressions.                  |
+;; +-------------------------------------------------------------+
+
+
+(def pow-op
+  "Power-of operator; implemented as a custom funcion exp."
+  (>> (token "**") (lexer (return "blancas.eisen.trans/exp"))))
+
+
+(def uni-op
+  "Unary operators not, bitwise not, plus, minus."
+  (<|> (>> (sym \!) (lexer (return "not")))
+       (>> (sym \~) (lexer (return "bit-not")))
+       (one-of  "+-")))
+
+
+(def dot-op
+  "Parses a function name as a binary operator: .op."
+  (let [op (<+> (many1 (<|> alpha-num (one-of* "!$*-_+=<>?'"))))]
+    (lexer (lexeme (between (sym* \.) op)))))
+
+
+(def mul-op
+  "Multiplicative operators; a backslash denotes (quot);
+   % denotes (mod); * denotes multiplication; and / denotes
+   both division and integer ratio."
+  (<|> (>> (sym \\) (lexer (return "quot")))
+       (>> (sym \%) (lexer (return "mod")))
+       (one-of  "*/")))
+
+
+(def add-op
+  "Additive operators plus and minus."
+  (<|> (sym \-)
+       (<:> (<< (sym \+) (not-followed-by (sym \+))))))
+
+
+(def cons-op
+  "List construction operator."
+  (>> (sym \:) (lexer (return "blancas.eisen.trans/conj-rev"))))
+
+
+(def lcat-op
+  "List concatenation operator."
+  (>> (token "++") (lexer (return "concat"))))
+
+
+(def shft-op
+  "Bitwise shift operators; << denotes (bit-shift-left);
+   >> denotes (bit-shift-right)."
+  (<|> (>> (token "<<") (lexer (return "bit-shift-left")))
+       (>> (token ">>") (lexer (return "bit-shift-right")))))
+
+
+(def band-op
+  "Operator bitwise and."
+  (<:> (>> (sym* \&) (not-followed-by (sym* \&)) trim (lexer (return "bit-and")))))
+
+
+(def bxor-op
+  "Opertor bitwise xor."
+  (>> (sym \^) (lexer (return "bit-xor"))))
+
+
+(def bor-op
+  "Opertor bitwise or."
+  (<:> (>> (sym* \|) (not-followed-by (sym* \|)) trim (lexer (return "bit-or")))))
+
+
+(def rel-op
+  "Relational operators."
+  (token ">=" "<=" ">" "<"))
+
+
+(def equ-op
+  "Equality operators; == denotes (=); != denotes not=."
+  (<|> (>> (token "==") (lexer (return "=")))
+       (>> (token "!=") (lexer (return "not=")))))
+
+
+(def and-op
+  "Operator logical and."
+  (>> (token "&&") (lexer (return "and"))))
+
+
+(def or-op
+  "Operator logical or."
+  (>> (token "||") (lexer (return "or"))))
+
+
+;; +-------------------------------------------------------------+
 ;; |                     Parser definitions.                     |
 ;; +-------------------------------------------------------------+
 
@@ -342,95 +433,12 @@ Literal values follow the rules of Java and Clojure."
        (parens (fwd expr))))
 
 
-(def pow-op
-  "Power-of operator; implemented as a custom funcion exp."
-  (>> (token "**") (lexer (return "blancas.eisen.trans/exp"))))
+;; +-------------------------------------------------------------+
+;; |                     Eisen Expressions.                      |
+;; |                                                             |
+;; | Operator chaining, from highest to lowest precedence.       |
+;; +-------------------------------------------------------------+
 
-
-(def uni-op
-  "Unary operators not, bitwise not, plus, minus."
-  (<|> (>> (sym \!) (lexer (return "not")))
-       (>> (sym \~) (lexer (return "bit-not")))
-       (one-of  "+-")))
-
-
-(def dot-op
-  "Parses a function name as a binary operator: .op."
-  (let [op (<+> (many1 (<|> alpha-num (one-of* "!$*-_+=<>?'"))))]
-    (lexer (lexeme (between (sym* \.) op)))))
-
-
-(def mul-op
-  "Multiplicative operators; a backslash denotes (quot);
-   % denotes (mod); * denotes multiplication; and / denotes
-   both division and integer ratio."
-  (<|> (>> (sym \\) (lexer (return "quot")))
-       (>> (sym \%) (lexer (return "mod")))
-       (one-of  "*/")))
-
-
-(def add-op
-  "Additive operators plus and minus."
-  (<|> (sym \-)
-       (<:> (<< (sym \+) (not-followed-by (sym \+))))))
-
-
-(def cons-op
-  "List construction operator."
-  (>> (sym \:) (lexer (return "blancas.eisen.trans/conj-rev"))))
-
-
-(def lcat-op
-  "List concatenation operator."
-  (>> (token "++") (lexer (return "concat"))))
-
-
-(def shft-op
-  "Bitwise shift operators; << denotes (bit-shift-left);
-   >> denotes (bit-shift-right)."
-  (<|> (>> (token "<<") (lexer (return "bit-shift-left")))
-       (>> (token ">>") (lexer (return "bit-shift-right")))))
-
-
-(def band-op
-  "Operator bitwise and."
-  (<:> (>> (sym* \&) (not-followed-by (sym* \&)) trim (lexer (return "bit-and")))))
-
-
-(def bxor-op
-  "Opertor bitwise xor."
-  (>> (sym \^) (lexer (return "bit-xor"))))
-
-
-(def bor-op
-  "Opertor bitwise or."
-  (<:> (>> (sym* \|) (not-followed-by (sym* \|)) trim (lexer (return "bit-or")))))
-
-
-(def rel-op
-  "Relational operators."
-  (token ">=" "<=" ">" "<"))
-
-
-(def equ-op
-  "Equality operators; == denotes (=); != denotes not=."
-  (<|> (>> (token "==") (lexer (return "=")))
-       (>> (token "!=") (lexer (return "not=")))))
-
-
-(def and-op
-  "Operator logical and."
-  (>> (token "&&") (lexer (return "and"))))
-
-
-(def or-op
-  "Operator logical or."
-  (>> (token "||") (lexer (return "or"))))
-
-
-;;
-;; Operator chaining, from highest to lowest precedence.
-;;
 
 (def power  (chainr1* :BINOP  factor pow-op))
 (def unary  (prefix1* :UNIOP  power  uni-op))
@@ -491,29 +499,9 @@ Literal values follow the rules of Java and Clojure."
   (<|> seqex condex letex letrec fun-lit orex))
 
 
-(def val-decl
-  "Parses a declaration for a named value."
-  (>> (word "val")
-      (semi-sep1
-        (bind [name identifier  _ (sym \=)  val expr]
-          (return {:token :val :name (:value name) :value val})))))
-
-
-(def fun-decl
-  "Parses a function definition."
-  (bind [_     (word "fun")
-	 name  identifier
-	 parm  (many id-formal)
-	 _     (sym \=)
-	 val   expr]
-    (return {:token :fun :name (:value name) :params parm :value val})))
-
-
-(def fwd-decl
-  "Parses a forward declaration."
-  (>> (word "declare")
-      (bind [decls (many1 eisen-name)]
-        (return {:token :fwd :decls decls}))))
+;; +-------------------------------------------------------------+
+;; |                   Top-Level Declarations.                   |
+;; +-------------------------------------------------------------+
 
 
 (def mod-decl
@@ -541,6 +529,31 @@ Literal values follow the rules of Java and Clojure."
       (semi-sep1
         (bind [name identifier qualify (optional qualifier)]
           (return {:token :imp :name (:value name) :qualify qualify})))))
+
+
+(def fwd-decl
+  "Parses a forward declaration."
+  (>> (word "declare")
+      (bind [decls (many1 eisen-name)]
+        (return {:token :fwd :decls decls}))))
+
+
+(def val-decl
+  "Parses a declaration for a named value."
+  (>> (word "val")
+      (semi-sep1
+        (bind [name identifier  _ (sym \=)  val expr]
+          (return {:token :val :name (:value name) :value val})))))
+
+
+(def fun-decl
+  "Parses a function definition."
+  (bind [_     (word "fun")
+	 name  identifier
+	 parm  (many id-formal)
+	 _     (sym \=)
+	 val   expr]
+    (return {:token :fun :name (:value name) :params parm :value val})))
 
 
 (def eisen-code

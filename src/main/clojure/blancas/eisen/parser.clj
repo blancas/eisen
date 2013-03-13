@@ -30,8 +30,22 @@ Literal values follow the rules of Java and Clojure."
 
 
 ;; +-------------------------------------------------------------+
+;; |                       Extensibility.                        |
+;; +-------------------------------------------------------------+
+
+
+(def reserved (atom #{}))
+
+
+(defn add-reserved
+  "Adds an Eisen reserved word."
+  [name] (swap! conj name))
+
+
+;; +-------------------------------------------------------------+
 ;; |                      Lexer definitions.                     |
 ;; +-------------------------------------------------------------+
+
 
 (def eisen-style
   "Lexical settings for the Eisen language."
@@ -76,7 +90,6 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def new-line   (lexer :new-line   rec))
-(def identifier (lexer :identifier rec))
 (def char-lit   (lexer :char-lit   rec))
 (def string-lit (lexer :string-lit rec))
 (def dec-lit    (lexer :dec-lit    rec))
@@ -97,6 +110,14 @@ Literal values follow the rules of Java and Clojure."
 
 (defn token   [x & more] (apply lexer :token rec x more)) 
 (defn word    [x & more] (apply lexer :word  rec x more))
+
+
+(def identifier
+  "Parses an identifier, checking for additional reserved words."
+  (<:> (bind [pos get-position val (:identifier rec)]
+         (if (contains? @reserved val)
+	   (fail (fmt :reserved val))
+	   (return {:token :identifier :value val :pos pos})))))
 
 
 (def key-name
@@ -122,14 +143,14 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def lisp-name
-  "Parses a lisp name between dots to avoid interference with eisen."
+  "Parses a lisp name in backquotes to avoid interference with Eisen."
   (bind [pos get-position
 	 val (lexeme (between (sym* \`) lisp-id))]
     (return {:token :identifier :value val :pos pos})))
 
 
 (def eisen-name
-  "An Eisen name is an eisen identifier or a lisp name."
+  "An Eisen name is an identifier or a lisp name."
   (<|> identifier lisp-name))
 
 
@@ -140,9 +161,13 @@ Literal values follow the rules of Java and Clojure."
     (return (assoc arg :token :id-arg))))
 
 
-;; Custom parsing of numeric literals for reading function arguments.
-;; In these cases the parser must not allow a leading sing as part
-;; of the literal, as it interferes with the overall arithmetic.
+;; +-------------------------------------------------------------+
+;; |                  Custom Numeric Parsers.                    |
+;; |                                                             |
+;; | Leading signs are not allowed to avoid conflict with the    |
+;; | addition and subtraction operators.                         |
+;; +-------------------------------------------------------------+
+
 
 (def sign (optional (one-of* "+-")))
 
@@ -151,20 +176,24 @@ Literal values follow the rules of Java and Clojure."
 
 (def float-suffix (<< (optional (sym* \M)) (not-followed-by letter)))
 
+
 (def custom-dec-lit
   (<?> (>>= (<:> (lexeme (<+> (many1 digit) int-suffix)))
             (fn [x] (return (read-string x))))
        (i18n :dec-lit)))
 	
+
 (def custom-oct-lit
   (<?> (>>= (<:> (lexeme (<+> (sym* \0) (many oct-digit) int-suffix)))
             (fn [x] (return (read-string x))))
        (i18n :oct-lit)))
 
+
 (def custom-hex-lit
   (<?> (>>= (<:> (lexeme (<+> (token- "0x") (many1 hex-digit) int-suffix)))
             (fn [x] (return (read-string x))))
        (i18n :hex-lit)))
+
 
 (def custom-flt-lit
   (<?> (>>= (<:> (lexeme
@@ -326,7 +355,7 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def dot-op
-  "Parses a function name as a binary operator as .name."
+  "Parses a function name as a binary operator: .op."
   (let [op (<+> (many1 (<|> alpha-num (one-of* "!$*-_+=<>?'"))))]
     (lexer (lexeme (between (sym* \.) op)))))
 

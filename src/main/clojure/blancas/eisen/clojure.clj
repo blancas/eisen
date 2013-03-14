@@ -18,7 +18,8 @@
 
 
 ;; +-------------------------------------------------------------+
-;; | when                                                        |
+;; | 'when' boolean-expr                                         |
+;; | 'do' [expr ( ';' expr )*] 'end'                             |
 ;; +-------------------------------------------------------------+
 
 (def whenex
@@ -37,7 +38,28 @@
 
 
 ;; +-------------------------------------------------------------+
-;; | doseq                                                       |
+;; | 'while' boolean-expr                                        |
+;; | 'do' [expr ( ';' expr )*] 'end'                             |
+;; +-------------------------------------------------------------+
+
+(def whileex
+  "Parses a while expression."
+  (bind [test (>> (word "while") orex)
+	 body doex]
+    (return {:token :while-expr :test test :body body})))
+
+
+(defn trans-whileex
+  "Translates a while expression."
+  [ast]
+  (monad [test (trans-expr (:test ast))
+	  body (trans-expr (:body ast))]
+    (make-right `(clojure.core/while ~test ~body))))
+
+
+;; +-------------------------------------------------------------+
+;; | 'doseq' <name> '<-' expr                                    |
+;; | 'in' expr ( ';' expr )* 'end'                               |
 ;; +-------------------------------------------------------------+
 
 (def doseqex
@@ -56,4 +78,15 @@
 	  source (trans-expr coll)
           body   (seqm (map trans-expr exprs))
 	  _      (modify-st right difference [symbol])]
-    (make-right `(doseq [~symbol ~source] ~@body))))
+    (make-right `(clojure.core/doseq [~symbol ~source] ~@body))))
+
+
+;; +-------------------------------------------------------------+
+;; | 'loop' ( (val decl) | (fun decl) )*                         |
+;; | 'in' expr ( ';' expr )* 'end'                               |
+;; +-------------------------------------------------------------+
+
+(def loopex
+  "Parses a loop expression."
+  (bind [_ (word "loop") decls bindings exprs in-sequence]
+    (return {:token :loop-expr :decls decls :exprs exprs})))

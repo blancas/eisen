@@ -476,6 +476,12 @@ Literal values follow the rules of Java and Clojure."
 (def orex   (chainl1* :BINOP  andex  or-op))
 
 
+(def bindings
+  "Parses zero or more val and fun declarations
+   as the equivalent of Clojure bindings."
+  (<$> flatten (many (<|> (fwd val-decl) (fwd fun-decl)))))
+
+
 (def in-sequence
   "Parses expressions surrounded by in .. end.
    Returns a vector of declarations, not a token map."
@@ -507,18 +513,14 @@ Literal values follow the rules of Java and Clojure."
 
 (def letex
   "Parses a let expression."
-  (bind [_ (word "let")
-	 decls (<$> flatten (many (<|> val-decl fun-decl)))
-	 exprs in-sequence]
+  (bind [_ (word "let") decls bindings exprs in-sequence]
     (return {:token :let-expr :decls decls :exprs exprs})))
 
 
 (def letrec
   "Parses a letrec expression. Bindings are functions that
    can be recursive or mutually recursive."
-  (bind [_ (word "letrec")
-	 decls (<$> flatten (many1 (<|> val-decl fun-decl)))
-	 exprs in-sequence]
+  (bind [_ (word "letrec") decls bindings exprs in-sequence]
     (return {:token :letrec-expr :decls decls :exprs exprs})))
 
 
@@ -536,21 +538,18 @@ Literal values follow the rules of Java and Clojure."
 
 (def mod-decl
   "Parses a module declaration."
-  (bind [name (>> (word "module") (lexeme lisp-id))]
+  (bind [_ (word "module") name (lexeme lisp-id)]
     (return {:token :mod :name name})))
 
 
 (def qualifier
   "Parses an import qualifier."
-  (<|> (>> (word "as")
-	   (bind [name (lexeme lisp-id)]
-	     (return {:token :as :value name})))
-       (>> (word "only")
-	   (bind [value (brackets (comma-sep eisen-name))]
-	     (return {:token :only :value value})))
-       (>> (word "hide")
-	   (bind [value (brackets (comma-sep eisen-name))]
-	     (return {:token :hide :value value})))))
+  (<|> (bind [_ (word "as") name (lexeme lisp-id)]
+         (return {:token :as :value name}))
+       (bind [_ (word "only") value (brackets (comma-sep eisen-name))]
+         (return {:token :only :value value}))
+       (bind [_ (word "hide") value (brackets (comma-sep eisen-name))]
+	 (return {:token :hide :value value}))))
 
 
 (def imp-decl
@@ -563,9 +562,8 @@ Literal values follow the rules of Java and Clojure."
 
 (def fwd-decl
   "Parses a forward declaration."
-  (>> (word "declare")
-      (bind [decls (many1 eisen-name)]
-        (return {:token :fwd :decls decls}))))
+  (bind [_ (word "declare") decls (many1 eisen-name)]
+    (return {:token :fwd :decls decls})))
 
 
 (def val-decl
@@ -578,11 +576,9 @@ Literal values follow the rules of Java and Clojure."
 
 (def fun-decl
   "Parses a function definition."
-  (bind [_     (word "fun")
-	 name  identifier
-	 parm  (many id-formal)
-	 _     (sym \=)
-	 val   expr]
+  (bind [name (>> (word "fun") identifier)
+	 parm (many id-formal)
+	 val  (>> (sym \=) expr)]
     (return {:token :fun :name (:value name) :params parm :value val})))
 
 

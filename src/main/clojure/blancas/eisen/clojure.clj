@@ -10,6 +10,7 @@
       :author "Armando Blancas"}
   blancas.eisen.clojure
   (:use [blancas.kern core i18n]
+        [blancas.morph.core :only (monad)]
 	[blancas.eisen parser trans]))
 
 
@@ -17,4 +18,12 @@
   "Parses a when expression."
   (bind [test (>> (word "when") orex)
 	 body doex]
-    (return {:token :when-expr :test test :body then})))
+    (return {:token :when-expr :test test :body body})))
+
+
+(defn trans-whenex
+  "Translates a when expression."
+  [ast]
+  (monad [test (trans-expr (:test ast))
+	  body (trans-expr (:body ast))]
+    (make-right `(if ~test ~body))))

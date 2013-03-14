@@ -350,7 +350,7 @@ Literal values follow the rules of Java and Clojure."
 (def list-lit
   "Parses a list literal."
   (bind [pos get-position
-	 val (brackets (comma-sep (fwd expr)))]
+	 val (brackets (comma-sep expr))]
     (return {:token :list-lit :value val :pos pos})))
 
 
@@ -358,7 +358,7 @@ Literal values follow the rules of Java and Clojure."
   "Parses a vector literal."
   (<:> (bind [pos get-position
 	      val (>> (sym* \#)
-		      (brackets (comma-sep (fwd expr))))]
+		      (brackets (comma-sep expr)))]
          (return {:token :vector-lit :value val :pos pos}))))     
 
 
@@ -366,14 +366,14 @@ Literal values follow the rules of Java and Clojure."
   "Parses a set literal."
   (<:> (bind [pos get-position
 	      val (>> (sym* \#)
-		      (braces (comma-sep (fwd expr))))]
+		      (braces (comma-sep expr)))]
          (return {:token :set-lit :value val :pos pos}))))
 
 
 (def map-lit
   "Parses a map literal."
   (bind [pos get-position
-	 val (braces (comma-sep (<*> (fwd expr) (fwd expr))))]
+	 val (braces (comma-sep (<*> expr expr)))]
     (return {:token :map-lit :value (flatten val) :pos pos})))
 
 
@@ -480,22 +480,22 @@ Literal values follow the rules of Java and Clojure."
   "Parses sequenced expressions: one or more expressions in
    parenthesis and separated by semicolons. The value of the
    compound expression is the value of its last expression."
-  (bind [xs (parens (semi-sep orex))]
+  (bind [xs (parens (semi-sep (fwd expr)))]
     (return {:token :seq-expr :value xs})))
 
 
 (def doex
   "Parses sequenced expressions; like seqex but using 'do'
    and 'end'. Returns the value of the last expression."
-  (bind [xs (between (word "do") (word "end") (semi-sep orex))]
+  (bind [xs (between (word "do") (word "end") (semi-sep (fwd expr)))]
     (return {:token :seq-expr :value xs})))
 
 
 (def condex
   "Parses a conditional expression."
   (bind [test (>> (word "if") orex)
-	 then (>> (word "then") (fwd expr))
-	 else (optional (>> (word "else") (fwd expr)))]
+	 then (>> (word "then") expr)
+	 else (optional (>> (word "else") expr))]
     (return {:token :cond-expr :test test :then then :else else})))
 	 
 

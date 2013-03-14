@@ -380,10 +380,10 @@
 
 
 (deftest test-0800
-  (fact "sequenced expressions go in parens separated by semicolons"
-    (eisen= "(1+1; 2+2; 3+3)") => 6
-    (eisen= "(inc 0; inc 1)") => 2
-    (eisen= "(inc 0; map inc [1,2,3,4])") => '(2 3 4 5)))
+  (fact "sequenced expressions as arguments; alternative to do ... end"
+    (eisen= "identity (1+1; 2+2; 3+3)") => 6
+    (eisen= "identity (inc 0; inc 1)") => 2
+    (eisen= "identity (inc 0; map inc [1,2,3,4])") => '(2 3 4 5)))
 
 
 ;; +-------------------------------------------------------------+

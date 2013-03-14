@@ -344,7 +344,7 @@ Literal values follow the rules of Java and Clojure."
 ;; +-------------------------------------------------------------+
 
 
-(declare expr val-decl fun-decl)
+(declare expr seqex val-decl fun-decl)
 
 
 (def list-lit
@@ -412,7 +412,7 @@ Literal values follow the rules of Java and Clojure."
        map-lit
        re-lit
        id-arg
-       (parens (fwd expr))))
+       (fwd seqex)))
 
 
 (defn macro?
@@ -489,10 +489,9 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def seqex
-  "Parses sequenced expressions: one or more expressions in
-   parenthesis and separated by semicolons. The value of the
-   compound expression is the value of its last expression."
-  (bind [xs (parens (semi-sep (fwd expr)))]
+  "Parses sequenced expressions as a single function arguments.
+   Use as an alternative to do ... end. Returns the last value."
+  (bind [xs (parens (semi-sep1 (fwd expr)))]
     (return {:token :seq-expr :value xs})))
 
 
@@ -527,7 +526,7 @@ Literal values follow the rules of Java and Clojure."
 (def expr
   "Parses an Eisen expression."
   (bind [_ trim]
-    (let [basic (list seqex doex condex letex letrec fun-lit orex)]
+    (let [basic (list doex condex letex letrec fun-lit orex)]
       (apply <|> (concat @expr-lst basic)))))
 
 

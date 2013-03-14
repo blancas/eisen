@@ -15,10 +15,12 @@
 	[blancas.morph.transf :only (->StateT state-t get-st modify-st eval-state-t)]))
 
 
+(def predefs #{'recur})  ;; Initial state of the environment.
+
+
 ;; +-------------------------------------------------------------+
 ;; |                       Extensibility.                        |
 ;; +-------------------------------------------------------------+
-
 
 (def expr-trans (atom {}))  ;; User-defined table of expression ranslators.
 (def decl-trans (atom {}))  ;; User-defined table of declaration translators.
@@ -238,7 +240,7 @@
         (make-right `(if ~test ~then ~else))))))
 
 
-(defn- val-binding
+(defn val-binding
   "Translates a val binding."
   [ast]
   (let [name (symbol (:name ast))]
@@ -246,7 +248,7 @@
       (make-right [name val]))))
 
 
-(defn- fun-binding
+(defn fun-binding
   "Translates a function binding."
   [{:keys [name params value]}]
   (let [sym (symbol name)]
@@ -257,7 +259,7 @@
       (make-right [sym `(blancas.morph.core/mcf ~env ~code)]))))
 
 
-(defn- trans-binding
+(defn trans-binding
   "Parses a val or fun binding."
   [ast]
   (if (= (:token ast) :val)
@@ -279,7 +281,7 @@
         (make-right `(let [~@(apply concat decls)] ~@exprs))))))
 
 
-(defn- val-binding-letrec
+(defn val-binding-letrec
   "Translates a val binding in a letrec expression."
   [ast]
   (let [name (symbol (:name ast))]
@@ -287,7 +289,7 @@
       (make-right (list name [] val)))))
 
 
-(defn- fun-binding-letrec
+(defn fun-binding-letrec
   "Translates a function binding in a letrec expression."
   [{:keys [name params value]}]
   (let [sym (symbol name)]
@@ -298,7 +300,7 @@
       (make-right (list sym env code)))))
 
 
-(defn- trans-binding-letrec
+(defn trans-binding-letrec
   "Parses a val or fun binding in a letrec expression."
   [ast]
   (if (= (:token ast) :val)
@@ -427,6 +429,6 @@
    :error  if not ok, the error or warning message"
   [coll]
   (let [job (monad [v (seqm (map eval-ast coll))] (make-right v))]
-    (either [res (run-se job #{})]
+    (either [res (run-se job predefs)]
       {:ok false :error res}
       {:ok true :decls (map first res) :value (-> res last second)})))

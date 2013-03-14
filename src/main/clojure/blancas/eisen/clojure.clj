@@ -90,3 +90,41 @@
   "Parses a loop expression."
   (bind [_ (word "loop") decls bindings exprs in-sequence]
     (return {:token :loop-expr :decls decls :exprs exprs})))
+
+
+(defn trans-loopex
+  "Translates a loop expression."
+  [{:keys [decls exprs]}]
+  (if (empty? decls)
+    (monad [exprs (seqm (map trans-expr exprs))]
+      (make-right `(loop [] ~@exprs)))
+    (let [env (map (comp symbol :name) decls)]
+      (monad [_     (modify-st right into env)
+	      decls (seqm (map trans-binding decls))
+              exprs (seqm (map trans-expr exprs))
+	      _     (modify-st right difference env)]
+        (make-right `(loop [~@(apply concat decls)] ~@exprs))))))
+
+
+;; +-------------------------------------------------------------+
+;; | 'whenfirst' <name> '<-' expr                                    |
+;; | 'in' expr ( ';' expr )* 'end'                               |
+;; +-------------------------------------------------------------+
+
+(def whenfirstex
+  "Parses a when-first expression."
+  (bind [name (>> (word "whenfirst") sym-arg)
+	 coll (>> (word "<-") expr)
+	 expr in-sequence]
+    (return {:token :whenfirst-expr :name name :coll coll :exprs expr})))
+
+
+(defn trans-whenfirstex
+  "Translates a when-first expression."
+  [{:keys [name coll exprs]}]
+  (monad [symbol (trans-expr name)
+	  _      (modify-st right conj symbol)
+	  source (trans-expr coll)
+          body   (seqm (map trans-expr exprs))
+	  _      (modify-st right difference [symbol])]
+    (make-right `(clojure.core/when-first [~symbol ~source] ~@body))))

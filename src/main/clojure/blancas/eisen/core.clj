@@ -77,16 +77,19 @@
 (defn read-eisen
   "Reads one or more lines of Eisen code; nsp tells whether to print
    the current namespace; p1 is the initial prompt and p2 is the
-   line-continuation prompt. A single new-line character ends the input."
-  [nsp p1 p2]
+   line-continuation prompt; p3 is the command to quit reading.
+   A single new-line character ends the input."
+  [nsp p1 p2 p3]
   (print (str (if nsp (ns-name *ns*) "") p1 \space))
   (.flush *out*)
   (loop [line "" s (read-line)]
     (if (seq s)
-      (do
-        (print (str p2 \space))
-        (.flush *out*)
-        (recur (str line s \newline) (read-line)))
+      (if (= s p3)
+        p3
+        (do
+          (print (str p2 \space))
+          (.flush *out*)
+          (recur (str line s \newline) (read-line))))
       (if (= (last line) \newline)
         (apply str (butlast line))
         line))))
@@ -94,8 +97,8 @@
 
 (defn eisen-repl
   "Implements a simple Eisen REPL. Uses (read-eisen) to read code
-   until the user types // followed by Enter. It evaluates each
-   block of code and prints the result.
+   until the user types the quit command (default //) followed by
+   Enter. It evaluates each block of code and prints the result.
 
    If called with no arguments, it will default to printing the
    current namespace, followed by : and using > as a continuation
@@ -110,13 +113,13 @@
    > <Enter>
    user=>"
   ([]
-   (eisen-repl true ":" ">"))
-  ([nsp p1 p2]
-   (let [code (read-eisen nsp p1 p2)]
+   (eisen-repl true ":" ">" "//"))
+  ([nsp p1 p2 p3]
+   (let [code (read-eisen nsp p1 p2 p3)]
      (when-not (= code "//")
        (if (seq code) 
          (println (eisen= code)))
-       (recur nsp p1 p2)))))
+       (recur nsp p1 p2 p3)))))
 
 
 (defn add-expression

@@ -9,10 +9,17 @@
 (ns ^{:doc "Eisen Expressions for Clojure Core Macros"
       :author "Armando Blancas"}
   blancas.eisen.clojure
-  (:use [blancas.kern core i18n]
-        [blancas.morph.core :only (monad)]
+  (:use [clojure.set :only (difference)]
+	[blancas.kern core i18n]
+        [blancas.morph.core :only (monad seqm)]
+	[blancas.morph.monads :only (left right either)]
+	[blancas.morph.transf :only (state-t get-st modify-st)]
 	[blancas.eisen parser trans]))
 
+
+;; +-------------------------------------------------------------+
+;; | when                                                        |
+;; +-------------------------------------------------------------+
 
 (def whenex
   "Parses a when expression."
@@ -27,3 +34,26 @@
   (monad [test (trans-expr (:test ast))
 	  body (trans-expr (:body ast))]
     (make-right `(if ~test ~body))))
+
+
+;; +-------------------------------------------------------------+
+;; | doseq                                                       |
+;; +-------------------------------------------------------------+
+
+(def doseqex
+  "Parses a doseq expression."
+  (bind [name (>> (word "doseq") sym-arg)
+	 coll (>> (word "<-") expr)
+	 expr in-sequence]
+    (return {:token :doseq-expr :name name :coll coll :exprs expr})))
+
+
+(defn trans-doseqex
+  "Translates a doseq expression."
+  [{:keys [name coll exprs]}]
+  (monad [symbol (trans-expr name)
+	  _      (modify-st right conj symbol)
+	  source (trans-expr coll)
+          body   (seqm (map trans-expr exprs))
+	  _      (modify-st right difference [symbol])]
+    (make-right `(doseq [~symbol ~source] ~@body))))

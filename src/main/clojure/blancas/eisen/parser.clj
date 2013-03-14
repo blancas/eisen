@@ -476,6 +476,12 @@ Literal values follow the rules of Java and Clojure."
 (def orex   (chainl1* :BINOP  andex  or-op))
 
 
+(def in-sequence
+  "Parses expressions surrounded by in .. end.
+   Returns a vector of declarations, not a token map."
+  (between (word "in") (word "end") (semi-sep (fwd expr))))
+
+
 (def seqex
   "Parses sequenced expressions: one or more expressions in
    parenthesis and separated by semicolons. The value of the
@@ -503,7 +509,7 @@ Literal values follow the rules of Java and Clojure."
   "Parses a let expression."
   (bind [_ (word "let")
 	 decls (<$> flatten (many (<|> val-decl fun-decl)))
-	 exprs (between (word "in") (word "end") (semi-sep expr))]
+	 exprs in-sequence]
     (return {:token :let-expr :decls decls :exprs exprs})))
 
 
@@ -511,8 +517,8 @@ Literal values follow the rules of Java and Clojure."
   "Parses a letrec expression. Bindings are functions that
    can be recursive or mutually recursive."
   (bind [_ (word "letrec")
-	 decls (<$> flatten (many (<|> val-decl fun-decl)))
-	 exprs (between (word "in") (word "end") (semi-sep expr))]
+	 decls (<$> flatten (many1 (<|> val-decl fun-decl)))
+	 exprs in-sequence]
     (return {:token :letrec-expr :decls decls :exprs exprs})))
 
 

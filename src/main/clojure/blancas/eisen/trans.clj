@@ -267,13 +267,16 @@
 
 (defn trans-let
   "Translates a let expression."
-  [ast]
-  (let [env (map (comp symbol :name) (:decls ast))]
-    (monad [_     (modify-st right into env)
-	    decls (seqm (map trans-binding (:decls ast)))
-            exprs (seqm (map trans-expr (:exprs ast)))
-	    _     (modify-st right difference env)]
-      (make-right `(let [~@(apply concat decls)] ~@exprs)))))
+  [{:keys [decls exprs]}]
+  (if (empty? decls)
+    (monad [exprs (seqm (map trans-expr exprs))]
+      (make-right `(let [] ~@exprs)))
+    (let [env (map (comp symbol :name) decls)]
+      (monad [_     (modify-st right into env)
+	      decls (seqm (map trans-binding decls))
+              exprs (seqm (map trans-expr exprs))
+	      _     (modify-st right difference env)]
+        (make-right `(let [~@(apply concat decls)] ~@exprs))))))
 
 
 (defn- val-binding-letrec
@@ -305,11 +308,11 @@
 
 (defn trans-letrec
   "Translates a letrec expression."
-  [ast]
-  (let [env (map (comp symbol :name) (:decls ast))]
+  [{:keys [decls exprs]}]
+  (let [env (map (comp symbol :name) decls)]
     (monad [_     (modify-st right into env)
-	    decls (seqm (map trans-binding-letrec (:decls ast)))
-            exprs (seqm (map trans-expr (:exprs ast)))
+	    decls (seqm (map trans-binding-letrec decls))
+            exprs (seqm (map trans-expr exprs))
 	    _     (modify-st right difference env)]
       (make-right `(letfn [~@decls] ~@exprs)))))
 

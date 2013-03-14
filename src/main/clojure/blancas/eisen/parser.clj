@@ -69,7 +69,7 @@ Literal values follow the rules of Java and Clojure."
     :identifier-start   (<|> lower (sym* \_))
     :identifier-letter  (<|> alpha-num (one-of* "_'?!./"))
     :reserved-names     ["module" "import" "declare" "val" "fun" "fn" "_"
-			 "if" "then" "else" "let" "letrec" "in" "end"]))
+			 "if" "then" "else" "let" "letrec" "in" "do" "end"]))
 
 
 (def rec (lex/make-parsers eisen-style))
@@ -484,6 +484,13 @@ Literal values follow the rules of Java and Clojure."
     (return {:token :seq-expr :value xs})))
 
 
+(def doex
+  "Parses sequenced expressions; like seqex but using 'do'
+   and 'end'. Returns the value of the last expression."
+  (bind [xs (between (word "do") (word "end") (semi-sep orex))]
+    (return {:token :seq-expr :value xs})))
+
+
 (def condex
   "Parses a conditional expression."
   (bind [test (>> (word "if") orex)
@@ -496,9 +503,7 @@ Literal values follow the rules of Java and Clojure."
   "Parses a let expression."
   (bind [_ (word "let")
 	 decls (<$> flatten (many (<|> val-decl fun-decl)))
-	 _ (word "in")
-	 exprs (many expr)
-	 _ (word "end")]
+	 exprs (between (word "in") (word "end") (semi-sep expr))]
     (return {:token :let-expr :decls decls :exprs exprs})))
 
 
@@ -507,16 +512,14 @@ Literal values follow the rules of Java and Clojure."
    can be recursive or mutually recursive."
   (bind [_ (word "letrec")
 	 decls (<$> flatten (many (<|> val-decl fun-decl)))
-	 _ (word "in")
-	 exprs (many expr)
-	 _ (word "end")]
+	 exprs (between (word "in") (word "end") (semi-sep expr))]
     (return {:token :letrec-expr :decls decls :exprs exprs})))
 
 
 (def expr
   "Parses an Eisen expression."
   (bind [_ trim]
-    (let [basic (list seqex condex letex letrec fun-lit orex)]
+    (let [basic (list seqex doex condex letex letrec fun-lit orex)]
       (apply <|> (concat @expr-lst basic)))))
 
 

@@ -107,7 +107,7 @@
 
 
 ;; +-------------------------------------------------------------+
-;; | 'whenfirst' <name> '<-' expr                                    |
+;; | 'whenfirst' <name> '<-' expr                                |
 ;; | 'in' expr ( ';' expr )* 'end'                               |
 ;; +-------------------------------------------------------------+
 
@@ -128,3 +128,43 @@
           body   (seqm (map trans-expr exprs))
 	  _      (modify-st right difference [symbol])]
     (make-right `(clojure.core/when-first [~symbol ~source] ~@body))))
+
+
+;; +-------------------------------------------------------------+
+;; | 'for' '[' ( <name> '<-' expr [;] )*                         |
+;; | ( let decl | when expr | while expr )* ']' expr             |
+;; +-------------------------------------------------------------+
+
+(def bind-seq
+  "Parses a binding to a sequence."
+  (bind [name sym-arg _ (word "<-") coll expr]
+    (return {:token :bind-seq :name name :expr coll})))
+
+
+(def let-pred
+  "Parses a let predicate in a for expression."
+  (bind [_ (word "let") decls bindings]
+    (return {:token :let-pred :decls decls})))
+
+
+(def while-pred
+  "Parses a while predicate in a for expression."
+  (bind [_ (word "while") e expr]
+    (return {:token :while-pred :expr e})))
+
+
+(def when-pred
+  "Parses a when predicate in a for expression."
+  (bind [_ (word "when") e expr]
+    (return {:token :when-pred :expr e})))
+
+
+(def forex
+  "Parses a for expression."
+  (>> (word "for")
+      (bind [_   (sym \[)
+	     src (comma-sep1 bind-seq)
+             pre (many (<|> let-pred while-pred when-pred))
+	     _   (sym \])
+	     tgt expr]
+    (return {:token :for-expr :source src :preds pre :target tgt}))))

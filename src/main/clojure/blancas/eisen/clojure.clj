@@ -111,8 +111,9 @@
 ;; | ( let decl | when expr | while expr )* ']' expr             |
 ;; +-------------------------------------------------------------+
 
-(def bind-seq
-  "Parses a binding to a sequence."
+(def generator
+  "Parses a binding to a generator. Returns the same record as
+   a val declaration and it's translated with (trans-binding)."
   (bind [name sym-arg _ (word "<-") coll expr]
     (return {:token :val :name (:value name) :value coll})))
 
@@ -139,7 +140,7 @@
   "Parses a for expression."
   (>> (word "for")
       (bind [_     (sym \[)
-	     colls (comma-sep1 bind-seq)
+	     colls (comma-sep1 generator)
              preds (many (<|> let-pred while-pred when-pred))
 	     _     (sym \])
 	     body  expr]
@@ -192,7 +193,7 @@
   "Parses a doseq expression."
   (>> (word "doseq")
       (bind [_     (sym \[)
-	     colls (comma-sep1 bind-seq)
+	     colls (comma-sep1 generator)
              preds (many (<|> let-pred while-pred when-pred))
 	     _     (sym \])
              body  in-sequence]

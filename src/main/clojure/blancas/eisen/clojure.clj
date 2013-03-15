@@ -87,15 +87,15 @@
 ;; | 'in' expr ( ';' expr )* 'end'                               |
 ;; +-------------------------------------------------------------+
 
-(def whenfirstex
+(def whenfex
   "Parses a when-first expression."
   (bind [name (>> (word "whenfirst") sym-arg)
 	 coll (>> (word "<-") expr)
 	 expr in-sequence]
-    (return {:token :whenfirst-expr :name name :coll coll :exprs expr})))
+    (return {:token :whenf-expr :name name :coll coll :exprs expr})))
 
 
-(defn trans-whenfirstex
+(defn trans-whenfex
   "Translates a when-first expression."
   [{:keys [name coll exprs]}]
   (monad [symbol (trans-expr name)

@@ -9,6 +9,7 @@
 (ns ^{:doc "Main module of the Eisen translator."
       :author "Armando Blancas"}
   blancas.eisen.core
+  (:require [blancas.eisen.clojure :as cc])
   (:use [blancas.eisen.parser :only (eisen-code)]
 	[blancas.eisen.trans :only (trans)]
         [blancas.kern.core :only (parse run print-error f->s)]))
@@ -74,6 +75,58 @@
   ([f en] (eisen= (f->s f en) f)))
 
 
+(defn add-expression
+  "Extends Eisen with the ability to parse and translate
+   a new type of expression. Parameters:
+
+   token   A keyword that identifies the translator.
+
+   parser  A Kern parser that produces an Eisen AST, which is a
+           map with a :token field whose value is token (above).
+           Any other fields collect data for the translator.
+
+   trans   A function that translates an AST to Clojure code
+           using any data produced by the parser.
+
+   words   Any words to be reserved for this parser's syntax."
+  [token parser trans & words]
+  (blancas.eisen.parser/add-expr parser)
+  (blancas.eisen.trans/add-expr-trans token trans)
+  (blancas.eisen.parser/add-reserved words))
+
+
+(defn add-declaration
+  "Extends Eisen with the ability to parse and translate
+   a new type of top-level declaration. Parameters:
+
+   token   A keyword that identifies the translator.
+
+   parser  A Kern parser that produces an Eisen AST, which is a
+           map with a :token field whose value is token (above).
+           Any other fields collect data for the translator.
+
+   trans   A function that translates an AST to Clojure code
+           using any data produced by the parser.
+
+   words   Any words to be reserved for this parser's syntax."
+  [token parser trans & words]
+  (blancas.eisen.parser/add-decl parser)
+  (blancas.eisen.trans/add-decl-trans token trans)
+  (blancas.eisen.parser/add-reserved words))
+
+
+(defn clojure-core
+  "Installs the language constructs for Clojure Core:
+   when, while, loop, when-first, for, doseq."
+  []
+  (add-expression :when-expr  cc/whenex  cc/trans-whenex  "when")
+  (add-expression :while-expr cc/whileex cc/trans-whileex "while")
+  (add-expression :loop-expr  cc/loopex  cc/trans-loopex  "loop")
+  (add-expression :whenf-expr cc/whenfex cc/trans-whenfex "whenfirst")
+  (add-expression :for-expr   cc/forex   cc/trans-forex   "for" "let" "while" "when")
+  (add-expression :doseq-expr cc/doseqex cc/trans-doseqex "doseq" "let" "while" "when"))
+
+
 (defn read-eisen
   "Reads one or more lines of Eisen code; nsp tells whether to print
    the current namespace; p1 is the initial prompt and p2 is the
@@ -115,48 +168,9 @@
   ([]
    (eisen-repl true ":" ">" "//"))
   ([nsp p1 p2 p3]
+   (clojure-core)
    (let [code (read-eisen nsp p1 p2 p3)]
      (when-not (= code "//")
        (if (seq code) 
          (println (eisen= code)))
        (recur nsp p1 p2 p3)))))
-
-
-(defn add-expression
-  "Extends Eisen with the ability to parse and translate
-   a new type of expression. Parameters:
-
-   token   A keyword that identifies the translator.
-
-   parser  A Kern parser that produces an Eisen AST, which is a
-           map with a :token field whose value is token (above).
-           Any other fields collect data for the translator.
-
-   trans   A function that translates an AST to Clojure code
-           using any data produced by the parser.
-
-   words   Any words to be reserved for this parser's syntax."
-  [token parser trans & words]
-  (blancas.eisen.parser/add-expr parser)
-  (blancas.eisen.trans/add-expr-trans token trans)
-  (blancas.eisen.parser/add-reserved words))
-
-
-(defn add-declaration
-  "Extends Eisen with the ability to parse and translate
-   a new type of top-level declaration. Parameters:
-
-   token   A keyword that identifies the translator.
-
-   parser  A Kern parser that produces an Eisen AST, which is a
-           map with a :token field whose value is token (above).
-           Any other fields collect data for the translator.
-
-   trans   A function that translates an AST to Clojure code
-           using any data produced by the parser.
-
-   words   Any words to be reserved for this parser's syntax."
-  [token parser trans & words]
-  (blancas.eisen.parser/add-decl parser)
-  (blancas.eisen.trans/add-decl-trans token trans)
-  (blancas.eisen.parser/add-reserved words))

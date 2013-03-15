@@ -461,70 +461,70 @@
 
 
 (deftest test-1100
-  (let [code1 "let val foo = 99 in foo end"
-	code2 "let val foo = 99 in foo+1 end"]
+  (let [code1 "let foo = 99 in foo end"
+	code2 "let foo = 99; in foo+1 end"]
     (fact "let with a simple val"
       (eisen= code1) => 99
       (eisen= code2) => 100)))
 
 
 (deftest test-1105
-  (let [code1 "let val foo = 99 val bar = 10 in foo - bar end"
-	code2 "let val foo = 99 val bar = 10 in foo * bar end"]
+  (let [code1 "let foo = 99; bar = 10 in foo - bar end"
+	code2 "let foo = 99; bar = 10; in foo * bar end"]
     (fact "let with two bindings"
       (eisen= code1) => 89
       (eisen= code2) => 990)))
 
 
 (deftest test-1110
-  (let [code1 "let val foo = 99; bar = 10; baz = 5 in foo - bar * baz end"]
+  (let [code1 "let foo = 99; bar = 10; baz = 5 in foo - bar * baz end"]
     (fact "let with three bindings, single var decl"
       (eisen= code1) => 49)))
 
 
 (deftest test-1115
-  (let [code1 "let fun foo = 10 in foo end"
-	code2 "let fun foo x = x * x in foo 10 end"
-	code3 "let fun foo x y = x * x + y * y in foo 3 4 end"]
-    (fact "let with fun decls"
+  (let [code1 "let foo = 10 in foo end"
+	code2 "let foo x = x * x in foo 10 end"
+	code3 "let foo x y = x * x + y * y in foo 3 4 end"]
+    (fact "let with val and fun decls"
       (eisen= code1) => 10
       (eisen= code2) => 100
       (eisen= code3) => 25)))
 
 
 (deftest test-1120
-  (let [code1 "let val foo = 50 fun bar x = x + x in bar foo end"]
+  (let [code1 "let foo = 50; bar x = x + x in bar foo end"]
     (fact "let with combined val and fun  bindings"
       (eisen= code1) => 100)))
 
 
 (deftest test-1125
-  (let [code1 "let val foo = 50; bar = 20 fun up x = x+1 fun dec x = x-1"
+  (let [code1 "let foo = 50; bar = 20; up x = x+1; dec x = x-1;"
 	code2 "  in up foo + dec bar end"]
     (fact "let with multiple combined val and fun  bindings"
       (eisen= (str code1 code2)) => 70)))
 
 
 (deftest test-1130
-  (let [code1 "let val foo = 50 in let val bar = 20 in foo * bar end end"]
+  (let [code1 "let foo = 50 in let bar = 20 in foo * bar end end"]
     (fact "nested lets"
       (eisen= code1) => 1000)))
 
 
 (deftest test-1135
-  (let [code1 "let val foo = 99; bar = foo; baz = bar in baz+1 end"]
+  (let [code1 "let foo = 99; bar = foo; baz = bar in baz+1 end"]
     (fact "let with three bindings, with reference to previous ones"
       (eisen= code1) => 100)))
 
 
 ;; +-------------------------------------------------------------+
-;; |                      Let Expressions.                       |
+;; |                     Letrec Expressions.                     |
 ;; +-------------------------------------------------------------+
 
 
 (deftest test-1200
   (let [code1 "fun fact n = if n < 0 then -1 "
-	code2 "else letrec fun f x = if x == 0 then 1 else x * f (x-1) "
+	code2 "else letrec f x = if x == 0 then 1 else x * f (x-1) "
 	code3 "in f n end"]
     (eisen (str code1 code2 code3))
     (fact "recursive function in letrec"
@@ -533,17 +533,17 @@
 
 
 (deftest test-1205
-  (let [code1 "letrec fun foo x = if x > 0 then bar (x-1) else 0"
-	code2 "       fun bar x = if x > 0 then foo (x-1) else 0"
+  (let [code1 "letrec foo x = if x > 0 then bar (x-1) else 0;"
+	code2 "       bar x = if x > 0 then foo (x-1) else 0;"
 	code3 "       in foo 5 end"]
     (fact "letrec with mutually recursive functions"
       (eisen= (str code1 code2 code3)) => 0)))
 
 
 (deftest test-1210
-  (let [code1 "letrec val zap = 0 "
-        code2 "       fun foo x = if x > zap then bar (x-1) else zap"
-	code3 "       fun bar x = if x > 0 then foo (x-1) else zap"
+  (let [code1 "letrec zap = 0; "
+        code2 "       foo x = if x > zap then bar (x-1) else zap;"
+	code3 "       bar x = if x > 0 then foo (x-1) else zap;"
 	code4 "       in foo 5 end"]
     (fact "letrec with mutually recursive functions, using a val decl"
       (eisen= (str code1 code2 code3 code4)) => 0)))
@@ -585,7 +585,7 @@
 
 
 (deftest test-1400
-  (let [code "let val sq = fn x => x * x in sq 9 end"]
+  (let [code "let sq = fn x => x * x in sq 9 end"]
     (fact "use a fn value in a let expression"
       (eisen= code) => 81)))
 

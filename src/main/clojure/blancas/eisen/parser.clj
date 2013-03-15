@@ -476,29 +476,39 @@ Literal values follow the rules of Java and Clojure."
 (def orex   (chainl1* :BINOP  andex  or-op))
 
 
+(def local-binding
+  "Parses a val or fun binding for let and similar constructs."
+  (bind [name identifier
+	 parm (many id-formal)
+	 val  (>> (sym \=) expr)]
+    (if (empty? parm)
+      (return {:token :val :name (:value name) :value val})
+      (return {:token :fun :name (:value name) :params parm :value val}))))
+
+
 (def bindings
   "Parses zero or more val and fun declarations
    as the equivalent of Clojure bindings."
-  (<$> flatten (many (<|> (fwd val-decl) (fwd fun-decl)))))
+  (<$> flatten (sep-end-by semi local-binding)))
 
 
 (def in-sequence
   "Parses expressions surrounded by in .. end.
    Returns a vector of declarations, not a token map."
-  (between (word "in") (word "end") (semi-sep (fwd expr))))
+  (between (word "in") (word "end") (sep-end-by semi (fwd expr))))
 
 
 (def seqex
   "Parses sequenced expressions as a single function arguments.
    Use as an alternative to do ... end. Returns the last value."
-  (bind [xs (parens (semi-sep1 (fwd expr)))]
+  (bind [xs (parens (sep-end-by semi (fwd expr)))]
     (return {:token :seq-expr :value xs})))
 
 
 (def doex
   "Parses sequenced expressions; like seqex but using 'do'
    and 'end'. Returns the value of the last expression."
-  (bind [xs (between (word "do") (word "end") (semi-sep (fwd expr)))]
+  (bind [xs (between (word "do") (word "end") (sep-end-by semi (fwd expr)))]
     (return {:token :seq-expr :value xs})))
 
 
@@ -554,7 +564,7 @@ Literal values follow the rules of Java and Clojure."
 (def imp-decl
   "Parses an import declaration."
   (>> (word "import")
-      (semi-sep1
+      (sep-end-by1 semi
         (bind [name identifier qualify (optional qualifier)]
           (return {:token :imp :name (:value name) :qualify qualify})))))
 
@@ -568,8 +578,8 @@ Literal values follow the rules of Java and Clojure."
 (def val-decl
   "Parses a declaration for a named value."
   (>> (word "val")
-      (semi-sep1
-        (bind [name identifier  _ (sym \=)  val expr]
+      (sep-end-by1 semi
+        (bind [name identifier  _ (sym \=) val expr]
           (return {:token :val :name (:value name) :value val})))))
 
 

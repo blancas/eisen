@@ -58,30 +58,6 @@
 
 
 ;; +-------------------------------------------------------------+
-;; | 'doseq' <name> '<-' expr                                    |
-;; | 'in' expr ( ';' expr )* 'end'                               |
-;; +-------------------------------------------------------------+
-
-(def doseqex
-  "Parses a doseq expression."
-  (bind [name (>> (word "doseq") sym-arg)
-	 coll (>> (word "<-") expr)
-	 expr in-sequence]
-    (return {:token :doseq-expr :name name :coll coll :exprs expr})))
-
-
-(defn trans-doseqex
-  "Translates a doseq expression."
-  [{:keys [name coll exprs]}]
-  (monad [symbol (trans-expr name)
-	  _      (modify-st right conj symbol)
-	  source (trans-expr coll)
-          body   (seqm (map trans-expr exprs))
-	  _      (modify-st right difference [symbol])]
-    (make-right `(clojure.core/doseq [~symbol ~source] ~@body))))
-
-
-;; +-------------------------------------------------------------+
 ;; | 'loop' ( (val decl) | (fun decl) )*                         |
 ;; | 'in' expr ( ';' expr )* 'end'                               |
 ;; +-------------------------------------------------------------+
@@ -138,7 +114,7 @@
 (def bind-seq
   "Parses a binding to a sequence."
   (bind [name sym-arg _ (word "<-") coll expr]
-    (return {:token :bind-seq :name name :expr coll})))
+    (return {:token :val :name (:value name) :value coll})))
 
 
 (def let-pred
@@ -162,9 +138,75 @@
 (def forex
   "Parses a for expression."
   (>> (word "for")
-      (bind [_   (sym \[)
-	     src (comma-sep1 bind-seq)
-             pre (many (<|> let-pred while-pred when-pred))
-	     _   (sym \])
-	     tgt expr]
-    (return {:token :for-expr :source src :preds pre :target tgt}))))
+      (bind [_     (sym \[)
+	     colls (comma-sep1 bind-seq)
+             preds (many (<|> let-pred while-pred when-pred))
+	     _     (sym \])
+	     body  expr]
+        (return {:token :for-expr :colls colls :preds preds :body body}))))
+
+
+(defn trans-predicate
+  "Translates a list-comprehension predicate."
+  [pred]
+  (case (:token pred)
+    :while-pred
+      (monad [expr (trans-expr (:expr pred))]
+        (make-right [:while expr]))
+    :when-pred
+      (monad [expr (trans-expr (:expr pred))]
+        (make-right [:when expr]))
+    :let-pred
+      (monad [decls (seqm (map trans-binding (:decls pred)))]
+        (make-right [:let (vec (apply concat decls))]))))
+
+
+(defn optional-predicates
+  "Translates an optional list of predicates."
+  [preds]
+  (if (seq preds)
+    (seqm (map trans-predicate preds))
+    (make-right [])))
+
+
+(defn trans-forex
+  "Translates a for expression."
+  [{:keys [colls preds body]}]
+  (let [env (map (comp symbol :name) colls)]
+    (monad [_     (modify-st right into env)
+	    coll (seqm (map trans-binding colls)) 
+	    pred (optional-predicates preds)
+            body (trans-expr body)
+	    _    (modify-st right difference env)]
+      (let [decls (concat coll pred)]
+        (make-right `(clojure.core/for [~@(apply concat decls)] ~body))))))
+
+
+;; +-------------------------------------------------------------+
+;; | 'doseq' '[' ( <name> '<-' expr [;] )*                       |
+;; | ( let decl | when expr | while expr )* ']'                  |
+;; | 'in' expr ( ';' expr )* 'end'                               |
+;; +-------------------------------------------------------------+
+
+(def doseqex
+  "Parses a doseq expression."
+  (>> (word "doseq")
+      (bind [_     (sym \[)
+	     colls (comma-sep1 bind-seq)
+             preds (many (<|> let-pred while-pred when-pred))
+	     _     (sym \])
+             body  in-sequence]
+        (return {:token :doseq-expr :colls colls :preds preds :body body}))))
+
+
+(defn trans-doseqex
+  "Translates a doseq expression."
+  [{:keys [colls preds body]}]
+  (let [env (map (comp symbol :name) colls)]
+    (monad [_     (modify-st right into env)
+	    coll (seqm (map trans-binding colls)) 
+	    pred (optional-predicates preds)
+            body (seqm (map trans-expr body))
+	    _    (modify-st right difference env)]
+      (let [decls (concat coll pred)]
+        (make-right `(clojure.core/doseq [~@(apply concat decls)] ~@body))))))

@@ -76,8 +76,8 @@
       (make-right `(loop [] ~@exprs)))
     (let [env (map (comp symbol :name) decls)]
       (monad [_     (modify-st right into env)
-	      decls (seqm (map trans-binding decls))
-              exprs (seqm (map trans-expr exprs))
+	      decls (trans-bindings decls)
+              exprs (trans-exprs exprs)
 	      _     (modify-st right difference env)]
         (make-right `(loop [~@(apply concat decls)] ~@exprs))))))
 
@@ -101,7 +101,7 @@
   (monad [symbol (trans-expr name)
 	  _      (modify-st right conj symbol)
 	  source (trans-expr coll)
-          body   (seqm (map trans-expr exprs))
+          body   (trans-exprs exprs)
 	  _      (modify-st right difference [symbol])]
     (make-right `(clojure.core/when-first [~symbol ~source] ~@body))))
 
@@ -158,15 +158,15 @@
       (monad [expr (trans-expr (:expr pred))]
         (make-right [:when expr]))
     :let-pred
-      (monad [decls (seqm (map trans-binding (:decls pred)))]
+      (monad [decls (trans-bindings (:decls pred))]
         (make-right [:let (vec (apply concat decls))]))))
 
 
-(defn optional-predicates
-  "Translates an optional list of predicates."
-  [preds]
-  (if (seq preds)
-    (seqm (map trans-predicate preds))
+(defn trans-predicates
+  "Translates a collection of predicates."
+  [coll]
+  (if (seq coll)
+    (seqm (map trans-predicate coll))
     (make-right [])))
 
 
@@ -175,8 +175,8 @@
   [{:keys [colls preds body]}]
   (let [env (map (comp symbol :name) colls)]
     (monad [_     (modify-st right into env)
-	    coll (seqm (map trans-binding colls)) 
-	    pred (optional-predicates preds)
+	    coll (trans-bindings colls) 
+	    pred (trans-predicates preds)
             body (trans-expr body)
 	    _    (modify-st right difference env)]
       (let [decls (concat coll pred)]
@@ -205,9 +205,9 @@
   [{:keys [colls preds body]}]
   (let [env (map (comp symbol :name) colls)]
     (monad [_     (modify-st right into env)
-	    coll (seqm (map trans-binding colls)) 
-	    pred (optional-predicates preds)
-            body (seqm (map trans-expr body))
+	    coll (trans-bindings colls) 
+	    pred (trans-predicates preds)
+            body (trans-exprs body)
 	    _    (modify-st right difference env)]
       (let [decls (concat coll pred)]
         (make-right `(clojure.core/doseq [~@(apply concat decls)] ~@body))))))

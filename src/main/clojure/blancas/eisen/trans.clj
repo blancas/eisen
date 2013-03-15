@@ -193,7 +193,7 @@
 	pos (:pos name)
 	sym-name (symbol value)]
     (monad [env (get-st right)
-	    lst (seqm (map trans-expr args))]
+	    lst (trans-exprs args)]
       (if (contains? env sym-name)
         (make-right (list* sym-name lst))
 	(if-let [var-inst (resolve sym-name)]
@@ -207,7 +207,7 @@
   "Translates a call to a macro."
   [name args]
   (let [sym-name (symbol (:value name))]
-    (monad [lst (seqm (map trans-expr args))]
+    (monad [lst (trans-exprs args)]
       (make-right (list* sym-name lst)))))
 
 
@@ -267,18 +267,23 @@
     (fun-binding ast)))
 
 
+(defn trans-bindings
+  "Translates a collection of val or fun bindings."
+  [coll]
+  (if (seq coll)
+    (seqm (map trans-binding coll))
+    (make-right [])))
+
+
 (defn trans-let
   "Translates a let expression."
   [{:keys [decls exprs]}]
-  (if (empty? decls)
-    (monad [exprs (seqm (map trans-expr exprs))]
-      (make-right `(let [] ~@exprs)))
-    (let [env (map (comp symbol :name) decls)]
-      (monad [_     (modify-st right into env)
-	      decls (seqm (map trans-binding decls))
-              exprs (seqm (map trans-expr exprs))
-	      _     (modify-st right difference env)]
-        (make-right `(let [~@(apply concat decls)] ~@exprs))))))
+  (let [env (map (comp symbol :name) decls)]
+    (monad [_     (modify-st right into env)
+	    decls (trans-bindings decls)
+            exprs (trans-exprs exprs)
+	    _     (modify-st right difference env)]
+      (make-right `(let [~@(apply concat decls)] ~@exprs)))))
 
 
 (defn val-binding-letrec
@@ -314,7 +319,7 @@
   (let [env (map (comp symbol :name) decls)]
     (monad [_     (modify-st right into env)
 	    decls (seqm (map trans-binding-letrec decls))
-            exprs (seqm (map trans-expr exprs))
+            exprs (trans-exprs exprs)
 	    _     (modify-st right difference env)]
       (make-right `(letfn [~@decls] ~@exprs)))))
 
@@ -389,7 +394,7 @@
   "Translates a collection of ASTs into Clojure expressions."
   [coll]
   (if (seq coll)
-    (monad [v (seqm (map trans-expr coll))] (make-right v))
+    (seqm (map trans-expr coll))
     (make-right [])))
 
 

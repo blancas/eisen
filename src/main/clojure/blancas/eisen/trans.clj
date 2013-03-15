@@ -356,8 +356,14 @@
     :macro-call  (let [val (:value ast)]
                    (trans-macrocall (first val) (rest val)))
 
+    :list-range  (monad [vals (trans-exprs (:value ast))]
+                   (make-right `(list* (range ~(first vals) (inc ~(second vals))))))
+
     :list-lit    (monad [vals (trans-exprs (:value ast))]
                    (make-right `(list ~@vals)))
+
+    :vec-range   (monad [vals (trans-exprs (:value ast))]
+                   (make-right `(vec (range ~(first vals) (inc ~(second vals))))))
 
     :vector-lit  (monad [vals (trans-exprs (:value ast))]
                    (make-right vals))

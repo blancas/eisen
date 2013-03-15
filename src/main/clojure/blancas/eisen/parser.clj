@@ -349,9 +349,17 @@ Literal values follow the rules of Java and Clojure."
 
 (def list-lit
   "Parses a list literal."
-  (bind [pos get-position
-	 val (brackets (comma-sep expr))]
-    (return {:token :list-lit :value val :pos pos})))
+  (<:> (bind [pos get-position
+	      val (brackets (comma-sep expr))]
+         (return {:token :list-lit :value val :pos pos}))))
+
+
+(def list-range
+  "Parses a list literal as a [low high] range, where these
+   bounds can be literal values or expressions."
+  (<:> (bind [pos get-position
+	      val (brackets (<*> expr expr))]
+         (return {:token :list-range :value val :pos pos}))))
 
 
 (def vector-lit
@@ -360,6 +368,15 @@ Literal values follow the rules of Java and Clojure."
 	      val (>> (sym* \#)
 		      (brackets (comma-sep expr)))]
          (return {:token :vector-lit :value val :pos pos}))))     
+
+
+(def vec-range
+  "Parses a vector literal as a #[low high] range, where these
+   bounds can be literal values or expressions."
+  (<:> (bind [pos get-position
+	      val (>> (sym* \#)
+		      (brackets (<*> expr expr)))]
+         (return {:token :vec-range :value val :pos pos}))))
 
 
 (def set-lit
@@ -407,7 +424,9 @@ Literal values follow the rules of Java and Clojure."
        bool-lit
        nil-lit
        list-lit
+       list-range
        vector-lit
+       vec-range
        set-lit
        map-lit
        re-lit
@@ -444,7 +463,9 @@ Literal values follow the rules of Java and Clojure."
        bool-lit
        nil-lit
        list-lit
+       list-range
        vector-lit
+       vec-range
        set-lit
        map-lit
        re-lit

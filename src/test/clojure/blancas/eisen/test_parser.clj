@@ -162,6 +162,42 @@
       (:value p1)) => {:k1 737 :k2 747 "k3" 757}))
 
 
+(deftest test-0150
+  (fact "List literal with a range"
+    (let [p1 (eisen "[1 5]")]
+      (:value p1)) => '(1 2 3 4 5)))
+
+
+(deftest test-0155
+  (fact "List range with expressions"
+    (let [p1 (eisen "[1+3 5+3]")]
+      (:value p1)) => '(4 5 6 7 8)))
+
+
+(deftest test-0160
+  (fact "List literal with a range"
+    (let [p1 (eisen "let t160Low = 1; t160High = 5 in [(t160Low) (t160High)] end")]
+      (:value p1)) => '(1 2 3 4 5)))
+
+
+(deftest test-0180
+  (fact "Vector literal with a range"
+    (let [p1 (eisen "#[100 105]")]
+      (:value p1)) => [100 101 102 103 104 105]))
+
+
+(deftest test-0185
+  (fact "Vector range with expressions"
+    (let [p1 (eisen "#[100+5 105+5]")]
+      (:value p1)) => [105 106 107 108 109 110]))
+
+
+(deftest test-0190
+  (fact "Vector range with expressions"
+    (let [p1 (eisen "let t190Low = 100; t190High = 105 in #[(t190Low) (t190High)] end")]
+      (:value p1)) => [100 101 102 103 104 105]))
+
+
 ;; +-------------------------------------------------------------+
 ;; |                          Comments.                          |
 ;; +-------------------------------------------------------------+

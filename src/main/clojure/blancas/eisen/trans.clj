@@ -116,7 +116,7 @@
   "Translates an AST into a Clojure namespace call."
   [ast]
   (let [sym-name (symbol (:name ast))]
-    (make-right `(ns ~sym-name))))
+    (make-right `(clojure.core/ns ~sym-name))))
 
 
 (defn trans-imp
@@ -127,9 +127,12 @@
       (make-right `(use '~sym-name))
       (let [names (fn [x] (map (comp symbol :value) (:value x)))]
         (case (:token qualify)
-          :as   (make-right `(require '[~sym-name :as ~(symbol (:value qualify))]))
-	  :only (make-right `(use '[~sym-name :only ~(names qualify)]))
-	  :hide (make-right `(use '[~sym-name :exclude ~(names qualify)])))))))
+	  :as   (make-right `(clojure.core/require
+			       '[~sym-name :as ~(symbol (:value qualify))]))
+	  :only (make-right `(clojure.core/use
+			       '[~sym-name :only ~(names qualify)]))
+	  :hide (make-right `(clojure.core/use
+			       '[~sym-name :exclude ~(names qualify)])))))))
 
 
 (defn trans-val
@@ -155,7 +158,7 @@
   "Translates an AST into a Clojure forward declaration."
   [{:keys [decls]}]
   (let [names (map (comp symbol :value) decls)]
-    (make-right `(declare ~@names))))
+    (make-right `(clojure.core/declare ~@names))))
 
 
 (defn trans-identifier
@@ -357,13 +360,19 @@
                    (trans-macrocall (first val) (rest val)))
 
     :list-range  (monad [vals (trans-exprs (:value ast))]
-                   (make-right `(list* (range ~(first vals) (inc ~(second vals))))))
+		   (make-right `(clojure.core/list*
+				  (clojure.core/range
+				    ~(first vals)
+				     (clojure.core/inc ~(second vals))))))
 
     :list-lit    (monad [vals (trans-exprs (:value ast))]
-                   (make-right `(list ~@vals)))
+                   (make-right `(clojure.core/list ~@vals)))
 
     :vec-range   (monad [vals (trans-exprs (:value ast))]
-                   (make-right `(vec (range ~(first vals) (inc ~(second vals))))))
+		   (make-right `(clojure.core/vec
+				  (clojure.core/range
+				    ~(first vals)
+				     (clojure.core/inc ~(second vals))))))
 
     :vector-lit  (monad [vals (trans-exprs (:value ast))]
                    (make-right vals))

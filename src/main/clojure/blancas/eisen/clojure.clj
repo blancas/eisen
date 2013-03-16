@@ -71,15 +71,12 @@
 (defn trans-loopex
   "Translates a loop expression."
   [{:keys [decls exprs]}]
-  (if (empty? decls)
-    (monad [exprs (seqm (map trans-expr exprs))]
-      (make-right `(loop [] ~@exprs)))
-    (let [env (map (comp symbol :name) decls)]
-      (monad [_     (modify-st right into env)
-	      decls (trans-bindings decls)
-              exprs (trans-exprs exprs)
-	      _     (modify-st right difference env)]
-        (make-right `(loop [~@(apply concat decls)] ~@exprs))))))
+  (let [env (map (comp symbol :name) decls)]
+    (monad [_     (modify-st right into env)
+	    decls (trans-bindings decls)
+            exprs (trans-exprs exprs)
+	    _     (modify-st right difference env)]
+      (make-right `(loop [~@(apply concat decls)] ~@exprs)))))
 
 
 ;; +-------------------------------------------------------------+

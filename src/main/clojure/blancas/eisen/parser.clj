@@ -519,6 +519,12 @@ Literal values follow the rules of Java and Clojure."
   (between (word "in") (word "end") (sep-end-by semi (fwd expr))))
 
 
+(def end-sequence
+  "Parses expressions separated by semicolons ending with 'end'.
+   Returns a vector of declarations, not a token map."
+  (<< (sep-end-by semi (fwd expr)) (word "end")))
+
+
 (def seqex
   "Parses sequenced expressions as a single function arguments.
    Use as an alternative to do ... end. Returns the last value."

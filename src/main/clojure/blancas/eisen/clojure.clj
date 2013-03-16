@@ -208,3 +208,64 @@
 	    _    (modify-st right difference env)]
       (let [decls (concat coll pred)]
         (make-right `(clojure.core/doseq [~@(apply concat decls)] ~@body))))))
+
+
+;; +-------------------------------------------------------------+
+;; | 'with open' (val decl)*                                     |
+;; | 'in' expr ( ';' expr )* 'end'                               |
+;; +-------------------------------------------------------------+
+
+(def wopenex
+  "Parses a with-open expression."
+  (bind [decls (<:> (>> (word "with") (word "open") bindings))
+	 exprs in-sequence]
+    (return {:token :wopen-expr :decls decls :exprs exprs})))
+
+
+(defn trans-wopenex
+  "Translates a with-open expression."
+  [{:keys [decls exprs]}]
+  (let [env (map (comp symbol :name) decls)]
+    (monad [_     (modify-st right into env)
+	    decls (trans-bindings decls)
+            exprs (trans-exprs exprs)
+	    _     (modify-st right difference env)]
+      (make-right `(with-open [~@(apply concat decls)] ~@exprs)))))
+
+
+;; +-------------------------------------------------------------+
+;; | 'as string'                                                 |
+;; | [expr ( ';' expr )*] 'end'                                  |
+;; +-------------------------------------------------------------+
+
+(def strex
+  "Parses a with-out-str expression."
+  (bind [body (<:> (>> (word "as") (word "string") end-sequence))]
+    (return {:token :str-expr :body body})))
+
+
+(defn trans-strex
+  "Translates a with-out-str expression."
+  [ast]
+  (monad [body (trans-exprs (:body ast))]
+    (make-right `(clojure.core/with-out-str ~@body))))
+
+
+;; +-------------------------------------------------------------+
+;; | 'with string' expr                                          |
+;; | 'do' [expr ( ';' expr )*] 'end'                             |
+;; +-------------------------------------------------------------+
+
+(def wstrex
+  "Parses a with-in-str expression."
+  (bind [sval (<:> (>> (word "with") (word "string") expr))
+	 body doex]
+    (return {:token :wstr-expr :sval sval :body body})))
+
+
+(defn trans-wstrex
+  "Translates a with-in-str expression."
+  [{:keys [sval body]}]
+  (monad [sval (trans-expr sval)
+	  body (trans-expr body)]
+    (make-right `(clojure.core/with-in-str ~sval ~body))))

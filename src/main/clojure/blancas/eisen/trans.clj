@@ -11,16 +11,15 @@
   blancas.eisen.trans
   (:use [clojure.set :only (difference)]
         [blancas.morph.core :only (monad seqm)]
-	[blancas.morph.monads :only (left right either)]
-	[blancas.morph.transf :only (->StateT state-t get-st modify-st eval-state-t)]))
-
-
-(def predefs #{'recur})  ;; Initial state of the environment.
+	[blancas.morph.monads :only (either)]
+	[blancas.morph.transf :only (->left ->right get-se modify-se run-se)]))
 
 
 ;; +-------------------------------------------------------------+
 ;; |                       Extensibility.                        |
 ;; +-------------------------------------------------------------+
+
+(def predefs #{'recur})     ;; Initial state of the environment.
 
 (def expr-trans (atom {}))  ;; User-defined table of expression ranslators.
 (def decl-trans (atom {}))  ;; User-defined table of declaration translators.
@@ -36,27 +35,6 @@
   "Adds a translator function from a declaration AST to Clojure code,
    assigned to the supplied key."
   [key trans] (swap! expr-trans assoc key trans))
-
-
-;; +-------------------------------------------------------------+
-;; |                    StateT Either monad.                     |
-;; +-------------------------------------------------------------+
-
-
-(defn make-left
-  "Makes a Left value inside a State. This makes possible
-   to get a Left off `run-se` whose value is not a pair."
-  [x] (->StateT left (fn [_] (left x))))
-
-
-(defn make-right
-  "Makes an Right value inside a State."
-  [x] (state-t right x))
-
-
-(defn run-se
-  "Returns the Either inner monad."
-  [m s] (eval-state-t m s))
 
 
 ;; +-------------------------------------------------------------+
@@ -116,7 +94,7 @@
   "Translates an AST into a Clojure namespace call."
   [ast]
   (let [sym-name (symbol (:name ast))]
-    (make-right `(clojure.core/ns ~sym-name))))
+    (->right `(clojure.core/ns ~sym-name))))
 
 
 (defn trans-imp
@@ -124,15 +102,15 @@
   [{:keys [name qualify]}]
   (let [sym-name (symbol name)]
     (if (nil? qualify)
-      (make-right `(use '~sym-name))
+      (->right `(use '~sym-name))
       (let [names (fn [x] (map (comp symbol :value) (:value x)))]
         (case (:token qualify)
-	  :as   (make-right `(clojure.core/require
-			       '[~sym-name :as ~(symbol (:value qualify))]))
-	  :only (make-right `(clojure.core/use
-			       '[~sym-name :only ~(names qualify)]))
-	  :hide (make-right `(clojure.core/use
-			       '[~sym-name :exclude ~(names qualify)])))))))
+	  :as   (->right `(clojure.core/require
+			    '[~sym-name :as ~(symbol (:value qualify))]))
+	  :only (->right `(clojure.core/use
+			    '[~sym-name :only ~(names qualify)]))
+	  :hide (->right `(clojure.core/use
+			    '[~sym-name :exclude ~(names qualify)])))))))
 
 
 (defn trans-val
@@ -140,7 +118,7 @@
   [{:keys [name value]}]
   (let [sym-name (symbol name)]
     (monad [val (trans-expr value)]
-      (make-right `(def ~sym-name ~val)))))
+      (->right `(def ~sym-name ~val)))))
 
 
 (defn trans-fun
@@ -148,17 +126,17 @@
   [{:keys [name params value]}]
   (let [sym-name (symbol name)]
     (monad [env (trans-exprs params)
-	    _   (modify-st right into (cons sym-name env))
+	    _   (modify-se into (cons sym-name env))
 	    code (trans-expr value)
-	    _   (modify-st right difference (cons sym-name env))]
-      (make-right `(blancas.morph.core/defcurry ~sym-name ~env ~code)))))
+	    _   (modify-se difference (cons sym-name env))]
+      (->right `(blancas.morph.core/defcurry ~sym-name ~env ~code)))))
 
 
 (defn trans-fwd
   "Translates an AST into a Clojure forward declaration."
   [{:keys [decls]}]
   (let [names (map (comp symbol :value) decls)]
-    (make-right `(clojure.core/declare ~@names))))
+    (->right `(clojure.core/declare ~@names))))
 
 
 (defn trans-identifier
@@ -166,27 +144,27 @@
   [{:keys [value pos]}]
   (let [sym-name (symbol value)]
     (if (clazz? sym-name)
-      (make-right sym-name)
-      (monad [env (get-st right)]
+      (->right sym-name)
+      (monad [env get-se]
         (if (contains? env sym-name)
-          (make-right (make-ref sym-name))
+          (->right (make-ref sym-name))
 	  (if-let [var-inst (resolve sym-name)]
             (if (function? var-inst)
-	      (make-right `(~sym-name))
-	      (make-right sym-name))
-            (make-left (error pos "undeclared identifier: %s" value))))))))
+	      (->right `(~sym-name))
+	      (->right sym-name))
+            (->left (error pos "undeclared identifier: %s" value))))))))
 
 
 (defn trans-idarg
   "Translates a reference to an identifier as an argument."
   [{:keys [value pos]}]
   (let [sym-name (symbol value)]
-    (monad [env (get-st right)]
+    (monad [env get-se]
       (if (contains? env sym-name)
-        (make-right (make-ref sym-name))
+        (->right (make-ref sym-name))
 	(if (resolve sym-name)
-	  (make-right sym-name)
-          (make-left (error pos "undeclared identifier: %s" value)))))))
+	  (->right sym-name)
+          (->left (error pos "undeclared identifier: %s" value)))))))
 
 
 (defn trans-funcall
@@ -195,15 +173,15 @@
   (let [value (:value name)
 	pos (:pos name)
 	sym-name (symbol value)]
-    (monad [env (get-st right)
+    (monad [env get-se
 	    lst (trans-exprs args)]
       (if (contains? env sym-name)
-        (make-right (list* sym-name lst))
+        (->right (list* sym-name lst))
 	(if-let [var-inst (resolve sym-name)]
           (if (function? var-inst)
-	    (make-right (list* sym-name lst))
-	    (make-left (error pos "%s is not a function" value)))
-          (make-left (error pos "undeclared identifier: %s" value)))))))
+	    (->right (list* sym-name lst))
+	    (->left (error pos "%s is not a function" value)))
+          (->left (error pos "undeclared identifier: %s" value)))))))
 
 
 (defn trans-macrocall
@@ -211,7 +189,7 @@
   [name args]
   (let [sym-name (symbol (:value name))]
     (monad [lst (trans-exprs args)]
-      (make-right (list* sym-name lst)))))
+      (->right (list* sym-name lst)))))
 
 
 (defn trans-binop
@@ -220,7 +198,7 @@
   (monad [x (trans-expr (:left ast))
 	  y (trans-expr (:right ast))]
     (let [f (-> ast :op :value str symbol)]
-      (make-right `(~f ~x ~y)))))
+      (->right `(~f ~x ~y)))))
 
 
 (defn trans-uniop
@@ -228,7 +206,7 @@
   [ast]
   (monad [y (trans-expr (:right ast))]
     (let [f (-> ast :op :value str symbol)]
-      (make-right `(~f ~y)))))
+      (->right `(~f ~y)))))
 
 
 (defn trans-cond
@@ -237,10 +215,10 @@
   (let [e (:else ast)]
     (monad [test (trans-expr (:test ast))
 	    then (trans-expr (:then ast))
-	    else (if e (trans-expr (:else ast)) (make-right :empty))]
+	    else (if e (trans-expr (:else ast)) (->right :empty))]
       (if (= else :empty)
-        (make-right `(if ~test ~then))
-        (make-right `(if ~test ~then ~else))))))
+        (->right `(if ~test ~then))
+        (->right `(if ~test ~then ~else))))))
 
 
 (defn val-binding
@@ -248,18 +226,18 @@
   [ast]
   (let [name (symbol (:name ast))]
     (monad [val (trans-expr (:value ast))]
-      (make-right [name val]))))
+      (->right [name val]))))
 
 
 (defn fun-binding
   "Translates a function binding."
   [{:keys [name params value]}]
   (let [sym (symbol name)]
-    (monad [env (trans-exprs params)
-	    _   (modify-st right into env)
+    (monad [env  (trans-exprs params)
+	    _    (modify-se into env)
 	    code (trans-expr value)
-	    _   (modify-st right difference env)]
-      (make-right [sym `(blancas.morph.core/mcf ~env ~code)]))))
+	    _    (modify-se difference env)]
+      (->right [sym `(blancas.morph.core/mcf ~env ~code)]))))
 
 
 (defn trans-binding
@@ -275,18 +253,18 @@
   [coll]
   (if (seq coll)
     (seqm (map trans-binding coll))
-    (make-right [])))
+    (->right [])))
 
 
 (defn trans-let
   "Translates a let expression."
   [{:keys [decls exprs]}]
   (let [env (map (comp symbol :name) decls)]
-    (monad [_     (modify-st right into env)
+    (monad [_     (modify-se into env)
 	    decls (trans-bindings decls)
             exprs (trans-exprs exprs)
-	    _     (modify-st right difference env)]
-      (make-right `(let [~@(apply concat decls)] ~@exprs)))))
+	    _     (modify-se difference env)]
+      (->right `(let [~@(apply concat decls)] ~@exprs)))))
 
 
 (defn val-binding-letrec
@@ -294,18 +272,18 @@
   [ast]
   (let [name (symbol (:name ast))]
     (monad [val (trans-expr (:value ast))]
-      (make-right (list name [] val)))))
+      (->right (list name [] val)))))
 
 
 (defn fun-binding-letrec
   "Translates a function binding in a letrec expression."
   [{:keys [name params value]}]
   (let [sym (symbol name)]
-    (monad [env (trans-exprs params)
-	    _   (modify-st right into env)
+    (monad [env  (trans-exprs params)
+	    _    (modify-se into env)
 	    code (trans-expr value)
-	    _   (modify-st right difference env)]
-      (make-right (list sym env code)))))
+	    _    (modify-se difference env)]
+      (->right (list sym env code)))))
 
 
 (defn trans-binding-letrec
@@ -320,21 +298,21 @@
   "Translates a letrec expression."
   [{:keys [decls exprs]}]
   (let [env (map (comp symbol :name) decls)]
-    (monad [_     (modify-st right into env)
+    (monad [_     (modify-se into env)
 	    decls (seqm (map trans-binding-letrec decls))
             exprs (trans-exprs exprs)
-	    _     (modify-st right difference env)]
-      (make-right `(letfn [~@decls] ~@exprs)))))
+	    _     (modify-se difference env)]
+      (->right `(letfn [~@decls] ~@exprs)))))
 
 
 (defn trans-funlit
   "Translates an AST into a Clojure anonymous function."
   [{:keys [params value]}]
-  (monad [env (trans-exprs params)
-	  _   (modify-st right into env)
+  (monad [env  (trans-exprs params)
+	  _    (modify-se into env)
 	  code (trans-expr value)
-	  _   (modify-st right difference env)]
-    (make-right `(blancas.morph.core/mcf ~env ~code))))
+	  _    (modify-se difference env)]
+    (->right `(blancas.morph.core/mcf ~env ~code))))
 
 
 (defn trans-expr
@@ -344,10 +322,10 @@
     (:new-line :char-lit  :string-lit :dec-lit  :oct-lit
      :hex-lit  :float-lit :bool-lit   :nil-lit  :semi
      :comma    :colon     :dot        :keyword  :re-lit)
-                 (make-right (:value ast))
+                 (->right (:value ast))
 
     (:id-formal :sym-arg)
-		 (make-right (-> ast :value symbol))
+		 (->right (-> ast :value symbol))
 
     :id-arg      (trans-idarg ast)
 
@@ -360,31 +338,31 @@
                    (trans-macrocall (first val) (rest val)))
 
     :list-range  (monad [vals (trans-exprs (:value ast))]
-		   (make-right `(clojure.core/list*
-				  (clojure.core/range
-				    ~(first vals)
-				     (clojure.core/inc ~(second vals))))))
+		   (->right `(clojure.core/list*
+			       (clojure.core/range
+				 ~(first vals)
+				  (clojure.core/inc ~(second vals))))))
 
     :list-lit    (monad [vals (trans-exprs (:value ast))]
-                   (make-right `(clojure.core/list ~@vals)))
+                   (->right `(clojure.core/list ~@vals)))
 
     :vec-range   (monad [vals (trans-exprs (:value ast))]
-		   (make-right `(clojure.core/vec
-				  (clojure.core/range
-				    ~(first vals)
-				     (clojure.core/inc ~(second vals))))))
+		   (->right `(clojure.core/vec
+			       (clojure.core/range
+				 ~(first vals)
+				  (clojure.core/inc ~(second vals))))))
 
     :vector-lit  (monad [vals (trans-exprs (:value ast))]
-                   (make-right vals))
+                   (->right vals))
 
     :set-lit     (monad [vals (trans-exprs (:value ast))]
-                   (make-right (set vals)))
+                   (->right (set vals)))
 
     :map-lit     (monad [vals (trans-exprs (:value ast))]
-                   (make-right (apply hash-map vals)))
+                   (->right (apply hash-map vals)))
 
     :seq-expr    (monad [vals (trans-exprs (:value ast))]
-                   (make-right `(do ~@vals)))
+                   (->right `(do ~@vals)))
 
     :BINOP       (trans-binop ast)
 
@@ -402,7 +380,7 @@
 
     (if-let [trans ((:token ast) @expr-trans)]
       (trans ast)
-      (make-left ast))))
+      (->left ast))))
 
 
 (defn trans-exprs
@@ -410,7 +388,7 @@
   [coll]
   (if (seq coll)
     (seqm (map trans-expr coll))
-    (make-right [])))
+    (->right [])))
 
 
 (defn trans-ast
@@ -435,9 +413,9 @@
   [ast]
   (monad [code (trans-ast ast)]
     (try
-      (make-right [code (eval code)])
+      (->right [code (eval code)])
       (catch Throwable t
-	(make-left [code (str t)])))))
+	(->left [code (str t)])))))
 
 
 (defn trans
@@ -448,7 +426,7 @@
    :decls  if ok, a vector of Clojure forms
    :error  if not ok, the error or warning message"
   [coll]
-  (let [job (monad [v (seqm (map eval-ast coll))] (make-right v))]
+  (let [job (monad [v (seqm (map eval-ast coll))] (->right v))]
     (either [res (run-se job predefs)]
       {:ok false :error res}
       {:ok true :decls (map first res) :value (-> res last second)})))

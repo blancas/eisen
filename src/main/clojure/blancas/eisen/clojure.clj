@@ -12,8 +12,7 @@
   (:use [clojure.set :only (difference)]
 	[blancas.kern core i18n]
         [blancas.morph.core :only (monad seqm)]
-	[blancas.morph.monads :only (left right either)]
-	[blancas.morph.transf :only (state-t get-st modify-st)]
+	[blancas.morph.transf :only (->left ->right get-se modify-se)]
 	[blancas.eisen parser trans]))
 
 
@@ -34,7 +33,7 @@
   [ast]
   (monad [test (trans-expr (:test ast))
 	  body (trans-expr (:body ast))]
-    (make-right `(if ~test ~body))))
+    (->right `(if ~test ~body))))
 
 
 ;; +-------------------------------------------------------------+
@@ -54,7 +53,7 @@
   [ast]
   (monad [test (trans-expr (:test ast))
 	  body (trans-expr (:body ast))]
-    (make-right `(clojure.core/while ~test ~body))))
+    (->right `(clojure.core/while ~test ~body))))
 
 
 ;; +-------------------------------------------------------------+
@@ -72,11 +71,11 @@
   "Translates a loop expression."
   [{:keys [decls exprs]}]
   (let [env (map (comp symbol :name) decls)]
-    (monad [_     (modify-st right into env)
+    (monad [_     (modify-se into env)
 	    decls (trans-bindings decls)
             exprs (trans-exprs exprs)
-	    _     (modify-st right difference env)]
-      (make-right `(loop [~@(apply concat decls)] ~@exprs)))))
+	    _     (modify-se difference env)]
+      (->right `(loop [~@(apply concat decls)] ~@exprs)))))
 
 
 ;; +-------------------------------------------------------------+
@@ -96,11 +95,11 @@
   "Translates a when-first expression."
   [{:keys [name coll exprs]}]
   (monad [symbol (trans-expr name)
-	  _      (modify-st right conj symbol)
+	  _      (modify-se conj symbol)
 	  source (trans-expr coll)
           body   (trans-exprs exprs)
-	  _      (modify-st right difference [symbol])]
-    (make-right `(clojure.core/when-first [~symbol ~source] ~@body))))
+	  _      (modify-se difference [symbol])]
+    (->right `(clojure.core/when-first [~symbol ~source] ~@body))))
 
 
 ;; +-------------------------------------------------------------+
@@ -150,13 +149,13 @@
   (case (:token pred)
     :while-pred
       (monad [expr (trans-expr (:expr pred))]
-        (make-right [:while expr]))
+        (->right [:while expr]))
     :when-pred
       (monad [expr (trans-expr (:expr pred))]
-        (make-right [:when expr]))
+        (->right [:when expr]))
     :let-pred
       (monad [decls (trans-bindings (:decls pred))]
-        (make-right [:let (vec (apply concat decls))]))))
+        (->right [:let (vec (apply concat decls))]))))
 
 
 (defn trans-predicates
@@ -164,20 +163,20 @@
   [coll]
   (if (seq coll)
     (seqm (map trans-predicate coll))
-    (make-right [])))
+    (->right [])))
 
 
 (defn trans-forex
   "Translates a for expression."
   [{:keys [colls preds body]}]
   (let [env (map (comp symbol :name) colls)]
-    (monad [_     (modify-st right into env)
+    (monad [_    (modify-se into env)
 	    coll (trans-bindings colls) 
 	    pred (trans-predicates preds)
             body (trans-expr body)
-	    _    (modify-st right difference env)]
+	    _    (modify-se difference env)]
       (let [decls (concat coll pred)]
-        (make-right `(clojure.core/for [~@(apply concat decls)] ~body))))))
+        (->right `(clojure.core/for [~@(apply concat decls)] ~body))))))
 
 
 ;; +-------------------------------------------------------------+
@@ -201,13 +200,13 @@
   "Translates a doseq expression."
   [{:keys [colls preds body]}]
   (let [env (map (comp symbol :name) colls)]
-    (monad [_     (modify-st right into env)
+    (monad [_    (modify-se into env)
 	    coll (trans-bindings colls) 
 	    pred (trans-predicates preds)
             body (trans-exprs body)
-	    _    (modify-st right difference env)]
+	    _    (modify-se difference env)]
       (let [decls (concat coll pred)]
-        (make-right `(clojure.core/doseq [~@(apply concat decls)] ~@body))))))
+        (->right `(clojure.core/doseq [~@(apply concat decls)] ~@body))))))
 
 
 ;; +-------------------------------------------------------------+
@@ -226,11 +225,11 @@
   "Translates a with-open expression."
   [{:keys [decls exprs]}]
   (let [env (map (comp symbol :name) decls)]
-    (monad [_     (modify-st right into env)
+    (monad [_     (modify-se into env)
 	    decls (trans-bindings decls)
             exprs (trans-exprs exprs)
-	    _     (modify-st right difference env)]
-      (make-right `(with-open [~@(apply concat decls)] ~@exprs)))))
+	    _     (modify-se difference env)]
+      (->right `(with-open [~@(apply concat decls)] ~@exprs)))))
 
 
 ;; +-------------------------------------------------------------+
@@ -248,7 +247,7 @@
   "Translates a with-out-str expression."
   [ast]
   (monad [body (trans-exprs (:body ast))]
-    (make-right `(clojure.core/with-out-str ~@body))))
+    (->right `(clojure.core/with-out-str ~@body))))
 
 
 ;; +-------------------------------------------------------------+
@@ -268,4 +267,23 @@
   [{:keys [sval body]}]
   (monad [sval (trans-expr sval)
 	  body (trans-expr body)]
-    (make-right `(clojure.core/with-in-str ~sval ~body))))
+    (->right `(clojure.core/with-in-str ~sval ~body))))
+
+
+;; +-------------------------------------------------------------+
+;; | ( 'locking' | 'io' | 'sync' | 'dosync' )                    |
+;; | [expr ( ';' expr )*] 'end'                                  |
+;; +-------------------------------------------------------------+
+
+(def transex
+  "Parses a transaction statement."
+  (bind [key (word "locking" "io!" "sync" "dosync") body end-sequence]
+    (let [stmt (symbol (str "clojure.core/" key))]
+      (return {:token :trans-expr :stmt stmt :body body}))))
+
+
+(defn trans-transex
+  "Translates a transaction statement."
+  [{:keys [stmt body]}]
+  (monad [body (trans-exprs body)]
+    (->right `(~stmt ~@body))))

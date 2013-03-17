@@ -127,7 +127,9 @@
   (add-expression :doseq-expr cc/doseqex cc/trans-doseqex "doseq" "while" "when")
   (add-expression :wopen-expr cc/wopenex cc/trans-wopenex "with" "open")
   (add-expression :str-expr   cc/strex   cc/trans-strex   "as" "string")
-  (add-expression :wstr-expr  cc/wstrex  cc/trans-wstrex  "with" "string"))
+  (add-expression :wstr-expr  cc/wstrex  cc/trans-wstrex  "with" "string")
+  (add-expression :trans-expr cc/transex cc/trans-transex
+		  "locking" "io!" "sync" "dosync"))
 
 
 (defn read-eisen

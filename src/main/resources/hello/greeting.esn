@@ -1,0 +1,4 @@
+module eisen.user
+
+fun main = setq subject "seven seas"
+

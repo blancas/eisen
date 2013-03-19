@@ -287,3 +287,20 @@
   [{:keys [stmt body]}]
   (monad [body (trans-exprs body)]
     (->right `(~stmt ~@body))))
+
+
+;; +-------------------------------------------------------------+
+;; | 'setq' <name> expr                                          |
+;; +-------------------------------------------------------------+
+
+(def setqex
+  "Parses a setq statement."
+  (bind [name  (>> (word "setq") lisp-id) value expr]
+    (return {:token :setq-expr :name name :value value})))
+
+
+(defn trans-setqex
+  "Translates a setq statement."
+  [{:keys [name value]}]
+  (monad [source (trans-expr value)]
+    (->right `(alter-var-root (resolve '~(symbol name)) (constantly ~source)))))

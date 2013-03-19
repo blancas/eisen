@@ -15,6 +15,11 @@
         [blancas.kern.core :only (parse run print-error f->s)]))
 
 
+;; +-------------------------------------------------------------+
+;; |                  Working with Eisen Code.                   |
+;; +-------------------------------------------------------------+
+
+
 (defn parse-eisen
   "Parses the supplied Eisen code; returns an abstract syntax tree."
   ([text]
@@ -75,6 +80,11 @@
   ([f en] (eisen= (f->s f en) f)))
 
 
+;; +-------------------------------------------------------------+
+;; |                      Extending Eisen.                       |
+;; +-------------------------------------------------------------+
+
+
 (defn add-expression
   "Extends Eisen with the ability to parse and translate
    a new type of expression. Parameters:
@@ -116,8 +126,7 @@
 
 
 (defn clojure-core
-  "Installs the language constructs for Clojure Core:
-   when, while, loop, when-first, for, doseq."
+  "Installs the language constructs for Clojure Core."
   []
   (add-expression :when-expr  cc/whenex  cc/trans-whenex  "when")
   (add-expression :while-expr cc/whileex cc/trans-whileex "while")
@@ -129,7 +138,8 @@
   (add-expression :str-expr   cc/strex   cc/trans-strex   "as" "string")
   (add-expression :wstr-expr  cc/wstrex  cc/trans-wstrex  "with" "string")
   (add-expression :trans-expr cc/transex cc/trans-transex
-		  "locking" "io!" "sync" "dosync"))
+		  "locking" "io!" "sync" "dosync")
+  (add-expression :setq-expr  cc/setqex  cc/trans-setqex  "setq"))
 
 
 (defn read-eisen
@@ -179,3 +189,52 @@
        (if (seq code) 
          (println (eisen= code)))
        (recur nsp p1 p2 p3)))))
+
+
+;; +-------------------------------------------------------------+
+;; |                   Extending Applications.                   |
+;; +-------------------------------------------------------------+
+
+
+(defmacro host-name
+  "Creates a reference from the eisen.user namespace to the
+   supplied symbol. The name is preserved unless an alias is
+   also given, which is useful for avoiding backquotes if it
+   contains characters not accepted in Eisen identifiers."
+  ([sym]
+   `(host-name ~sym nil))
+  ([sym alias]
+   (let [name  (symbol (name sym))
+         nspc  (symbol (or (namespace sym) (str *ns*)))
+         local (symbol (str *ns*))
+         rcmd  (if alias
+                 `(refer '~nspc :rename {'~name '~alias})
+                 `(refer '~nspc :only '~(list name)))]
+     `(do (ns eisen.user) ~rcmd (ns ~local)))))
+
+
+(defmacro host-module
+  "Similar to (refer) but acts on the eisen.user namespace. It is
+   intended to simplify the host API by adding names in bulk.
+   It supports refer filters:
+
+   (host-module x.y.z)
+   (host-module x.y.z :exclude '(f2 f3))
+   (host-module x.y.z :only '(f2 f3))
+   (host-module x.y.z :rename {'f-1 'f1})"
+  [tgt & args]
+  (let [local (symbol (str *ns*))]
+    `(do (ns eisen.user) ~(list* 'refer (list 'quote tgt) args) (ns ~local))))
+
+
+(defn eisen-user
+  "Evaluates the contents of the file spacified by 'path'
+   and runs the function eisen.user/main, if one is defined."
+  [path]
+  (let [local (symbol (str *ns*))]
+    (ns eisen.user)
+    (eisenf path)
+    (in-ns local)
+    (if-let [v (resolve 'eisen.user/main)]
+      (if (and (bound? v) (fn? (var-get v)))
+	((var-get v))))))

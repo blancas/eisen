@@ -150,7 +150,7 @@ Literal values follow the rules of Java and Clojure."
 (def lisp-id
   "Parses a lisp id with extra characters."
   (let [fst (<|> letter (one-of* "!$*-_+=<>?|"))
-        rst (<|> fst digit (one-of* "'./"))]
+        rst (<|> fst digit (one-of* ":'./"))]
     (<+> fst (many rst))))
 
 

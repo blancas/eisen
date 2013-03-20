@@ -1,0 +1,12 @@
+(* Asks for the name on behalf of the host app. *)
+
+fun ask = do print "Who are you? ";
+             flush;
+             let name = `read-line` in 
+                 setq subject name 
+             end
+          end
+
+(* Sets the function ask as the first hook. *
+
+fun main = setv hook1 ask

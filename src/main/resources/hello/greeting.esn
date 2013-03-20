@@ -1,4 +1,10 @@
-module eisen.user
+module eisen.user  -- this is optional
 
-fun main = setq subject "seven seas"
+(*                                                   *)
+(*  The main function is called by the host program  *)
+(*  in order to apply any overrides and extensions.  *)
+(*                                                   *)
 
+fun main = do setq greeting "Howdy, %s!";  -- override the greeting
+              setq subject "seven seas"    -- override the receiver
+           end

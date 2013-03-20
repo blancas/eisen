@@ -303,4 +303,4 @@
   "Translates a setq statement."
   [{:keys [name value]}]
   (monad [source (trans-expr value)]
-    (->right `(alter-var-root (resolve '~(symbol name)) (constantly ~source)))))
+    (->right `(alter-var-root (var ~(symbol name)) (constantly ~source)))))

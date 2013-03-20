@@ -304,3 +304,20 @@
   [{:keys [name value]}]
   (monad [source (trans-expr value)]
     (->right `(alter-var-root (var ~(symbol name)) (constantly ~source)))))
+
+
+;; +-------------------------------------------------------------+
+;; | 'setv' <host-name> <eisen-name>                             |
+;; +-------------------------------------------------------------+
+
+(def setvex
+  "Parses a setv statement."
+  (bind [name  (>> (word "setv") (lexeme lisp-id)) id identifier]
+    (return {:token :setv-expr :name name :value (:value id)})))
+
+
+(defn trans-setvex
+  "Translates a setv statement."
+  [{:keys [name value]}]
+  (->right `(alter-var-root (var ~(symbol name))
+			    (constantly (var-get (var ~(symbol value)))))))

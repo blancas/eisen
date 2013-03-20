@@ -139,7 +139,8 @@
   (add-expression :wstr-expr  cc/wstrex  cc/trans-wstrex  "with" "string")
   (add-expression :trans-expr cc/transex cc/trans-transex
 		  "locking" "io!" "sync" "dosync")
-  (add-expression :setq-expr  cc/setqex  cc/trans-setqex  "setq"))
+  (add-expression :setq-expr  cc/setqex  cc/trans-setqex  "setq")
+  (add-expression :setv-expr  cc/setvex  cc/trans-setvex  "setv"))
 
 
 (defn read-eisen

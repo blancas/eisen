@@ -5,6 +5,8 @@
   (load-file "src/main/resources/hello/greeting.clj")
 )
 
+;; Definitions.
+
 (def greeting "hello, %s!")
 (def subject "world")
 
@@ -12,8 +14,12 @@
   "Greets someone or something."
   [g x] (println (format g x)))
 
-(host-module user)
-(clojure-core)
-(eisen-user "src/main/resources/hello/greeting.esn")
+;; Extensions.
+
+(init-eisen)                                          ;; Initialize Eisen.
+(host-module user)                                    ;; Provide names to user code.
+(eisen-user "src/main/resources/hello/greeting.esn")  ;; Run user code.
+
+;; Main program
 
 (greet greeting subject)

@@ -7,6 +7,6 @@ fun ask = do print "Who are you? ";
              end
           end
 
-(* Sets the function ask as the first hook. *
+(* Sets the function ask as the first hook. *)
 
 fun main = setv hook1 ask

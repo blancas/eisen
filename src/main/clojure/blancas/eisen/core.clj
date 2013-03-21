@@ -125,8 +125,8 @@
   (blancas.eisen.parser/add-reserved words))
 
 
-(defn clojure-core
-  "Installs the language constructs for Clojure Core."
+(defn init-eisen
+  "Performs the initialization of the library."
   []
   (add-expression :when-expr  cc/whenex  cc/trans-whenex  "when")
   (add-expression :while-expr cc/whileex cc/trans-whileex "while")
@@ -184,7 +184,7 @@
   ([]
    (eisen-repl true ":" ">" "//"))
   ([nsp p1 p2 p3]
-   (clojure-core)
+   (init-eisen)
    (let [code (read-eisen nsp p1 p2 p3)]
      (when-not (= code "//")
        (if (seq code) 

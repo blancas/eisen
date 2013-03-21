@@ -5,24 +5,26 @@
   (load-file "src/main/resources/hello/salute.clj")
 )
 
-(def greeting "hello, %s!")
-(def subject "world")
+;; Definitions.
 
-(def hook1)  ;; Something to do before the greeting.
-(def hook2)  ;; Something to do after the greeting.
+(def greeting "hello, %s!")  ;; Default form of the greeting.
+(def subject "world")        ;; Default receiver of the greeting.
+
+(def hook1)                  ;; Something to do before the greeting.
+(def hook2)                  ;; Something to do after the greeting.
 
 (defn greet
   "Greets someone or something."
   [g x] (println (format g x)))
 
-(host-module user)
-(clojure-core)
-(eisen-user "src/main/resources/hello/salute.esn")
+;; Extensions.
 
-;; Run user-defined code.
-(when (bound? (var hook1)) (hook1))
+(init-eisen)                                        ;; Initialize Eisen.
+(host-module user)                                  ;; Provide names to user code.
+(eisen-user "src/main/resources/hello/salute.esn")  ;; Run user code.
 
-(greet greeting subject)
+;; Main program.
 
-;; Run user-defined code.
-(when (bound? (var hook2)) (hook2))
+(when (bound? (var hook1)) (hook1))  ;; Run user-defined code.
+(greet greeting subject)             ;; Greets the subject.
+(when (bound? (var hook2)) (hook2))  ;; Run user-defined code.

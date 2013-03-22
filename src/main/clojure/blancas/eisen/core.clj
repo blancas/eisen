@@ -190,11 +190,10 @@
   ([sym alias]
    (let [name  (symbol (name sym))
          nspc  (symbol (or (namespace sym) (str *ns*)))
-         local (symbol (str *ns*))
          rcmd  (if alias
                  `(refer '~nspc :rename {'~name '~alias})
                  `(refer '~nspc :only '~(list name)))]
-     `(do (ns eisen.user) ~rcmd (ns ~local)))))
+     `(do (ns eisen.user) ~rcmd (ns ~nspc)))))
 
 
 (defmacro host-module
@@ -207,8 +206,8 @@
    (host-module x.y.z :only '(f2 f3))
    (host-module x.y.z :rename {'f-1 'f1})"
   [tgt & args]
-  (let [local (symbol (str *ns*))]
-    `(do (ns eisen.user) ~(list* 'refer (list 'quote tgt) args) (ns ~local))))
+  `(let [ns# (symbol (str *ns*))]
+     (ns eisen.user) ~(list* 'refer (list 'quote tgt) args) (in-ns ns#)))
 
 
 (defn eisen-user

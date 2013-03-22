@@ -2,9 +2,7 @@
 
 fun ask = do print "Who are you? ";
              flush;
-             let name = `read-line` in 
-                 setq subject name 
-             end
+             setq subject readLine
           end
 
 (* Sets the function ask as the first hook. *)

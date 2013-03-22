@@ -7,15 +7,15 @@
 
 ;; Definitions.
 
-(def greeting "hello, %s!")  ;; Default form of the greeting.
-(def subject "world")        ;; Default receiver of the greeting.
+(def greeting "hello, %s!\n")  ;; Default form of the greeting.
+(def subject "world")          ;; Default receiver of the greeting.
 
-(def hook1)                  ;; Something to do before the greeting.
-(def hook2)                  ;; Something to do after the greeting.
+(def hook1)                    ;; Something to do before the greeting.
+(def hook2)                    ;; Something to do after the greeting.
 
 (defn greet
   "Greets someone or something."
-  [g x] (println (format g x)))
+  [g x] (printf g x))
 
 ;; Extensions.
 

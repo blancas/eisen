@@ -5,6 +5,6 @@ module eisen.user  -- this is optional
 (*  in order to apply any overrides and extensions.  *)
 (*                                                   *)
 
-fun main = do setq greeting "Howdy, %s!";  -- override the greeting
-              setq subject "seven seas"    -- override the receiver
+fun main = do setq greeting "Howdy, %s!\n";  -- override the greeting
+              setq subject "seven seas"      -- override the receiver
            end

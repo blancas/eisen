@@ -7,12 +7,12 @@
 
 ;; Definitions.
 
-(def greeting "hello, %s!")
+(def greeting "hello, %s!\n")
 (def subject "world")
 
 (defn greet
   "Greets someone or something."
-  [g x] (println (format g x)))
+  [g x] (printf g x))
 
 ;; Extensions.
 

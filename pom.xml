@@ -52,6 +52,11 @@
       <version>1.5.1</version>
     </dependency>
     <dependency>
+      <groupId>org.clojure</groupId>
+      <artifactId>core.match</artifactId>
+      <version>0.2.0-alpha12</version>
+    </dependency>
+    <dependency>
       <groupId>org.blancas</groupId>
       <artifactId>kern</artifactId>
       <version>0.6.1</version>

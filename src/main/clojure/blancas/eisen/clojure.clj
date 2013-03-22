@@ -10,6 +10,7 @@
       :author "Armando Blancas"}
   blancas.eisen.clojure
   (:use [clojure.set :only (difference)]
+	[clojure.core.match :only (match)]
 	[blancas.kern core i18n]
         [blancas.morph.core :only (monad seqm)]
 	[blancas.morph.transf :only (->left ->right get-se modify-se)]
@@ -20,6 +21,7 @@
 ;; | 'when' boolean-expr                                         |
 ;; | 'do' [expr ( ';' expr )*] 'end'                             |
 ;; +-------------------------------------------------------------+
+
 
 (def whenex
   "Parses a when expression."
@@ -41,6 +43,7 @@
 ;; | 'do' [expr ( ';' expr )*] 'end'                             |
 ;; +-------------------------------------------------------------+
 
+
 (def whileex
   "Parses a while expression."
   (bind [test (>> (word "while") orex)
@@ -60,6 +63,7 @@
 ;; | 'loop' ( (val decl) | (fun decl) )*                         |
 ;; | 'in' expr ( ';' expr )* 'end'                               |
 ;; +-------------------------------------------------------------+
+
 
 (def loopex
   "Parses a loop expression."
@@ -83,6 +87,7 @@
 ;; | 'in' expr ( ';' expr )* 'end'                               |
 ;; +-------------------------------------------------------------+
 
+
 (def whenfex
   "Parses a when-first expression."
   (bind [name (>> (word "whenfirst") sym-arg)
@@ -103,9 +108,31 @@
 
 
 ;; +-------------------------------------------------------------+
+;; | 'case' expr 'of' (expr '=>' expr)+                          |
+;; +-------------------------------------------------------------+
+
+
+(def caseex
+  "Parses a case expression."
+  (bind [test (between (word "case") (word "of") expr)
+	 body (sep-end-by semi (<*> expr (>> (word "=>") expr)))
+	 _    (word "end")]
+    (return {:token :case-expr :test test :body (apply concat body)})))
+
+
+(defn trans-caseex
+  "Translates a case expression."
+  [ast]
+  (monad [test (trans-expr (:test ast))
+	  body (trans-exprs (:body ast))]
+    (->right `(clojure.core.match/match ~test ~@body))))
+
+
+;; +-------------------------------------------------------------+
 ;; | 'for' '[' ( <name> '<-' expr [;] )*                         |
 ;; | ( let decl | when expr | while expr )* ']' expr             |
 ;; +-------------------------------------------------------------+
+
 
 (def generator
   "Parses a binding to a generator. Returns the same record as
@@ -185,6 +212,7 @@
 ;; | 'in' expr ( ';' expr )* 'end'                               |
 ;; +-------------------------------------------------------------+
 
+
 (def doseqex
   "Parses a doseq expression."
   (>> (word "doseq")
@@ -214,6 +242,7 @@
 ;; | 'in' expr ( ';' expr )* 'end'                               |
 ;; +-------------------------------------------------------------+
 
+
 (def wopenex
   "Parses a with-open expression."
   (bind [decls (<:> (>> (word "with") (word "open") bindings))
@@ -237,6 +266,7 @@
 ;; | [expr ( ';' expr )*] 'end'                                  |
 ;; +-------------------------------------------------------------+
 
+
 (def strex
   "Parses a with-out-str expression."
   (bind [body (<:> (>> (word "as") (word "string") end-sequence))]
@@ -254,6 +284,7 @@
 ;; | 'with string' expr                                          |
 ;; | 'do' [expr ( ';' expr )*] 'end'                             |
 ;; +-------------------------------------------------------------+
+
 
 (def wstrex
   "Parses a with-in-str expression."
@@ -275,6 +306,7 @@
 ;; | [expr ( ';' expr )*] 'end'                                  |
 ;; +-------------------------------------------------------------+
 
+
 (def transex
   "Parses a transaction statement."
   (bind [key (word "locking" "io!" "sync" "dosync") body end-sequence]
@@ -293,6 +325,7 @@
 ;; | 'setq' <name> expr                                          |
 ;; +-------------------------------------------------------------+
 
+
 (def setqex
   "Parses a setq statement."
   (bind [name  (>> (word "setq") lisp-id) value expr]
@@ -309,6 +342,7 @@
 ;; +-------------------------------------------------------------+
 ;; | 'setv' <host-name> <eisen-name>                             |
 ;; +-------------------------------------------------------------+
+
 
 (def setvex
   "Parses a setv statement."

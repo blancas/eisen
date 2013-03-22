@@ -231,6 +231,7 @@
   (add-expression :while-expr cc/whileex cc/trans-whileex "while")
   (add-expression :loop-expr  cc/loopex  cc/trans-loopex  "loop")
   (add-expression :whenf-expr cc/whenfex cc/trans-whenfex "whenfirst")
+  (add-expression :case-expr  cc/caseex  cc/trans-caseex  "case" "of")
   (add-expression :for-expr   cc/forex   cc/trans-forex   "for" "while" "when")
   (add-expression :doseq-expr cc/doseqex cc/trans-doseqex "doseq" "while" "when")
   (add-expression :wopen-expr cc/wopenex cc/trans-wopenex "with" "open")

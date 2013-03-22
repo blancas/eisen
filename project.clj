@@ -5,6 +5,7 @@
   :url "https://github.com/blancas/eisen"
   :plugins [[codox "0.6.4"]]
   :dependencies [[org.clojure/clojure "1.5.1"]
+		 [org.clojure/core.match "0.2.0-alpha12"]
 		 [org.blancas/kern "0.6.1"]
 		 [org.blancas/morph "0.2.0"]]
   :source-paths ["src/main/clojure" "src/main/resources"]

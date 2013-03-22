@@ -84,6 +84,7 @@
 ;; |                      Extending Eisen.                       |
 ;; +-------------------------------------------------------------+
 
+(declare init-eisen)
 
 (defn add-expression
   "Extends Eisen with the ability to parse and translate
@@ -123,24 +124,6 @@
   (blancas.eisen.parser/add-decl parser)
   (blancas.eisen.trans/add-decl-trans token trans)
   (blancas.eisen.parser/add-reserved words))
-
-
-(defn init-eisen
-  "Performs the initialization of the library."
-  []
-  (add-expression :when-expr  cc/whenex  cc/trans-whenex  "when")
-  (add-expression :while-expr cc/whileex cc/trans-whileex "while")
-  (add-expression :loop-expr  cc/loopex  cc/trans-loopex  "loop")
-  (add-expression :whenf-expr cc/whenfex cc/trans-whenfex "whenfirst")
-  (add-expression :for-expr   cc/forex   cc/trans-forex   "for" "while" "when")
-  (add-expression :doseq-expr cc/doseqex cc/trans-doseqex "doseq" "while" "when")
-  (add-expression :wopen-expr cc/wopenex cc/trans-wopenex "with" "open")
-  (add-expression :str-expr   cc/strex   cc/trans-strex   "as" "string")
-  (add-expression :wstr-expr  cc/wstrex  cc/trans-wstrex  "with" "string")
-  (add-expression :trans-expr cc/transex cc/trans-transex
-		  "locking" "io!" "sync" "dosync")
-  (add-expression :setq-expr  cc/setqex  cc/trans-setqex  "setq")
-  (add-expression :setv-expr  cc/setvex  cc/trans-setvex  "setv"))
 
 
 (defn read-eisen
@@ -239,3 +222,65 @@
     (if-let [v (resolve 'eisen.user/main)]
       (if (and (bound? v) (fn? (var-get v)))
 	((var-get v))))))
+
+
+(defn init-eisen
+  "Initializes the Eisen library."
+  []
+  ;; Predefined expressions.
+  (add-expression :when-expr  cc/whenex  cc/trans-whenex  "when")
+  (add-expression :while-expr cc/whileex cc/trans-whileex "while")
+  (add-expression :loop-expr  cc/loopex  cc/trans-loopex  "loop")
+  (add-expression :whenf-expr cc/whenfex cc/trans-whenfex "whenfirst")
+  (add-expression :for-expr   cc/forex   cc/trans-forex   "for" "while" "when")
+  (add-expression :doseq-expr cc/doseqex cc/trans-doseqex "doseq" "while" "when")
+  (add-expression :wopen-expr cc/wopenex cc/trans-wopenex "with" "open")
+  (add-expression :str-expr   cc/strex   cc/trans-strex   "as" "string")
+  (add-expression :wstr-expr  cc/wstrex  cc/trans-wstrex  "with" "string")
+  (add-expression :trans-expr cc/transex cc/trans-transex
+		  "locking" "io!" "sync" "dosync")
+  (add-expression :setq-expr  cc/setqex  cc/trans-setqex  "setq")
+  (add-expression :setv-expr  cc/setvex  cc/trans-setvex  "setv")
+
+  ;; Aliases for avoiding backquotes in common functions.
+  (host-module clojure.core
+    :rename {
+      'assoc-in       'assocIn
+      'drop-while     'dropWhile
+      'get-in         'getIn
+      'group-by       'groupBy
+      'hash-map       'hashMap
+      'hash-set       'hashSet
+      'lazy-seq       'lazySeq
+      'line-seq       'lineSeq
+      'merge-with     'mergeWith
+      'not-any?       'notAny?
+      'not-empty      'notEmpty
+      'not-every?     'notEvery?
+      'partition-all  'partitionAll
+      'partition-by   'partitionBy
+      'pr-str         'prStr
+      'print-str      'printStr
+      'println-str    'printlnStr
+      're-find        'reFind
+      're-groups      'reGroups
+      're-matcher     'reMatcher
+      're-matches     'reMatches
+      're-pattern     'rePattern
+      're-seq         'reSeq
+      'read-line      'readLine
+      'ref-set        'refSet
+      'select-keys    'selectKeys
+      'sort-by        'sortBy
+      'sorted-map     'sortedMap
+      'sorted-map-by  'sortedMapBy
+      'sorted-set     'sortedSet
+      'sorted-set-by  'sortedSetBy
+      'split-at       'splitAt
+      'split-with     'splitWith
+      'take-last      'takeLast
+      'take-nth       'takeNth
+      'take-while     'takeWhile
+      'tree-seq       'treeSeq
+      'update-in      'updateIn
+      'xml-seq        'xmlSeq}))

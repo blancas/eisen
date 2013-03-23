@@ -180,6 +180,12 @@ Literal values follow the rules of Java and Clojure."
     (return (assoc arg :token :sym-arg))))
 
 
+(def wildcard
+  "Parses the wildcard character."
+  (bind [pos get-position val (word "_")]
+    (return {:token :sym-arg :value (:value val) :pos pos})))
+
+
 ;; +-------------------------------------------------------------+
 ;; |                  Custom Numeric Parsers.                    |
 ;; |                                                             |
@@ -344,7 +350,7 @@ Literal values follow the rules of Java and Clojure."
 ;; +-------------------------------------------------------------+
 
 
-(declare expr seqex val-decl fun-decl)
+(declare expr seqex val-decl fun-decl pattern)
 
 
 (def list-lit
@@ -379,6 +385,14 @@ Literal values follow the rules of Java and Clojure."
          (return {:token :vec-range :value val :pos pos}))))
 
 
+(def vector-pattern
+  "Parses a vector pattern as a target for matching."
+  (<:> (bind [pos get-position
+	      val (>> (sym* \#)
+		      (brackets (comma-sep pattern)))]
+         (return {:token :vector-lit :value val :pos pos}))))     
+
+
 (def set-lit
   "Parses a set literal."
   (<:> (bind [pos get-position
@@ -409,6 +423,24 @@ Literal values follow the rules of Java and Clojure."
 	 _     (word "=>")
 	 val   expr]
     (return {:token :fun-lit :params parm :value val})))
+
+
+(def pattern
+  "Either a literal value, a wildcard, or a name wildcard
+   in a pattern-matching expression."
+  (<|> key-name
+       char-lit
+       string-lit
+       dec-lit*
+       oct-lit*
+       hex-lit*
+       flt-lit*
+       bool-lit
+       nil-lit
+       list-lit
+       sym-arg
+       wildcard
+       vector-pattern))
 
 
 (def argument

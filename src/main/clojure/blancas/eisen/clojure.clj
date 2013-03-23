@@ -115,7 +115,7 @@
 (def caseex
   "Parses a case expression."
   (bind [test (between (word "case") (word "of") expr)
-	 body (sep-end-by semi (<*> expr (>> (word "=>") expr)))
+	 body (sep-end-by semi (<*> pattern (>> (word "=>") expr)))
 	 _    (word "end")]
     (return {:token :case-expr :test test :body (apply concat body)})))
 

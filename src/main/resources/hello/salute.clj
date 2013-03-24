@@ -11,7 +11,6 @@
 (def subject "world")          ;; Default receiver of the greeting.
 
 (def hook1)                    ;; Something to do before the greeting.
-(def hook2)                    ;; Something to do after the greeting.
 
 (defn greet
   "Greets someone or something."
@@ -27,4 +26,3 @@
 
 (when (bound? (var hook1)) (hook1))  ;; Run user-defined code.
 (greet greeting subject)             ;; Greets the subject.
-(when (bound? (var hook2)) (hook2))  ;; Run user-defined code.

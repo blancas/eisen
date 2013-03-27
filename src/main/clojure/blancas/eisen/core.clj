@@ -247,6 +247,7 @@
     :rename {
       'assoc-in       'assocIn
       'drop-while     'dropWhile
+      'file-seq       'fileSeq
       'get-in         'getIn
       'group-by       'groupBy
       'hash-map       'hashMap
@@ -283,4 +284,15 @@
       'take-while     'takeWhile
       'tree-seq       'treeSeq
       'update-in      'updateIn
-      'xml-seq        'xmlSeq}))
+      'xml-seq        'xmlSeq})
+
+  (host-module clojure.java.io :only '(file reader writer))
+  (host-module clojure.java.io
+    :rename {
+      'input-stream 'inputStream
+      'output-stream 'outputStream })
+
+  (host-module clojure.string :only '(blank? join replace split trim))
+  (host-module clojure.string :rename {'split-lines 'splitLines})
+
+  (host-module clojure.xml :only '(parse)))

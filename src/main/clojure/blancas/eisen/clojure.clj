@@ -83,14 +83,14 @@
 
 
 ;; +-------------------------------------------------------------+
-;; | 'whenfirst' <name> '<-' expr                                |
+;; | 'whenFirst' <name> '<-' expr                                |
 ;; | 'in' expr ( ';' expr )* 'end'                               |
 ;; +-------------------------------------------------------------+
 
 
 (def whenfex
   "Parses a when-first expression."
-  (bind [name (>> (word "whenfirst") sym-arg)
+  (bind [name (>> (word "whenFirst") sym-arg)
 	 coll (>> (word "<-") expr)
 	 expr in-sequence]
     (return {:token :whenf-expr :name name :coll coll :exprs expr})))
@@ -238,14 +238,14 @@
 
 
 ;; +-------------------------------------------------------------+
-;; | 'with open' (val decl)*                                     |
+;; | 'withOpen' (val decl)*                                      |
 ;; | 'in' expr ( ';' expr )* 'end'                               |
 ;; +-------------------------------------------------------------+
 
 
 (def wopenex
   "Parses a with-open expression."
-  (bind [decls (<:> (>> (word "with") (word "open") bindings))
+  (bind [decls (>> (word "withOpen") bindings)
 	 exprs in-sequence]
     (return {:token :wopen-expr :decls decls :exprs exprs})))
 
@@ -262,14 +262,14 @@
 
 
 ;; +-------------------------------------------------------------+
-;; | 'as string'                                                 |
+;; | 'asString'                                                  |
 ;; | [expr ( ';' expr )*] 'end'                                  |
 ;; +-------------------------------------------------------------+
 
 
 (def strex
   "Parses a with-out-str expression."
-  (bind [body (<:> (>> (word "as") (word "string") end-sequence))]
+  (bind [body (>> (word "asString") end-sequence)]
     (return {:token :str-expr :body body})))
 
 
@@ -281,15 +281,14 @@
 
 
 ;; +-------------------------------------------------------------+
-;; | 'with string' expr                                          |
+;; | 'withString' expr                                           |
 ;; | 'do' [expr ( ';' expr )*] 'end'                             |
 ;; +-------------------------------------------------------------+
 
 
 (def wstrex
   "Parses a with-in-str expression."
-  (bind [sval (<:> (>> (word "with") (word "string") expr))
-	 body doex]
+  (bind [sval (>> (word "withString") expr) body doex]
     (return {:token :wstr-expr :sval sval :body body})))
 
 

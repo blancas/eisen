@@ -5,6 +5,6 @@ fun ask = do print "Who are you? ";
              setq subject readLine
           end
 
-(* Sets the function ask as the first hook. *)
+(* Sets the hook as the function ask. *)
 
 fun main = setv hook1 ask

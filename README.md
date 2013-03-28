@@ -1,6 +1,18 @@
 # Eisen
 
-A Language for Programmable Applications.
+Eisen is a language toolkit that supports the development of programmable applications.
+
+### The Language
+
+Eisen is designed to be an embedded langauge with the semantics of Clojure and a syntax that closely follows *Standard ML*.
+
+### The Compiler
+
+Eisen compiles to Clojure, which compiles to Java bytecode.
+
+### The Library
+
+The Eisen Library makes it easy for a host program to run user code that overrides data and functions to provide customization and extensions. It also allows the host program to extend the Eisen language itself with new expressions and statements.
 
 ## Setup
 

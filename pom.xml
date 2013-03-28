@@ -132,10 +132,10 @@
           <clojureOptions>-Dfile.encoding=UTF-8</clojureOptions>
           <sourceDirectories>
             <sourceDirectory>src/main/clojure</sourceDirectory>
-            <sourceDirectory>src/main/resources</sourceDirectory>
           </sourceDirectories>
           <testSourceDirectories>
             <testSourceDirectory>src/test/clojure</testSourceDirectory>
+            <testSourceDirectory>src/main/resources</testSourceDirectory>
           </testSourceDirectories>
         </configuration>
         <executions>

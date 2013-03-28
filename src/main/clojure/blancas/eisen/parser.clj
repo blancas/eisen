@@ -16,7 +16,8 @@ comment-line         --
 nested-comments      Yes
 identifier-start     Lowercase or _
 identifier-letter    Alphanumeric or _ ' ? ! . /
-reserved-names       None
+reserved-names       module import declare val fun fn _
+		     if then else let letrec in do end
 case-sensitive       Yes
 line-continuation    Backslash
 trim-newline         Yes
@@ -60,7 +61,19 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def eisen-style
-  "Lexical settings for the Eisen language."
+  "Lexical settings for the Eisen language.
+
+   comment-start        (*
+   comment-end          *)
+   comment-line         --
+   nested-comments      Yes
+   identifier-start     Lowercase or _
+   identifier-letter    Alphanumeric or _ ' ? ! . /
+   reserved-names       module import declare val fun fn _
+   		        if then else let letrec in do end
+   case-sensitive       Yes
+   line-continuation    Backslash
+   trim-newline         Yes"
   (assoc lex/basic-def
     :comment-start       "(*"
     :comment-end         "*)"
@@ -87,7 +100,7 @@ Literal values follow the rules of Java and Clojure."
 (def comma-sep1 (:comma-sep1 rec))
 
 
-(defn- lexer
+(defn lexer
   "Wraps a lexer parser to produce a token record with
    the token code, value and position."
   ([p]

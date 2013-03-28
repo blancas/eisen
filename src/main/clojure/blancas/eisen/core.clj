@@ -21,7 +21,7 @@
 
 
 (defn parse-eisen
-  "Parses the supplied Eisen code; returns an abstract syntax tree."
+  "Parses the supplied Eisen code; returns an abstract syntax tree (AST)."
   ([text]
    (parse-eisen text ""))
   ([text source]
@@ -47,8 +47,9 @@
 
 
 (defn eisen=
-  "Runs the supplied Eisen code and shows the resulting value or error.
-   Intended to evaluating expressions at the REPL."
+  "Runs the supplied Eisen code. It returns the :value field of the
+   resulting map, or it prints any error messages on failure.
+   Intended for evaluating expressions at the REPL."
   ([text]
    (eisen= text ""))
   ([text source]
@@ -66,16 +67,16 @@
 
 
 (defn eisenf
-  "Translates an eisen file; takes an optional encoding, which
-   defaults to UTF-8."
+  "Runs the code from an eisen file; takes an optional encoding value,
+   which defaults to UTF-8."
   ([f] (eisenf f "UTF-8"))
   ([f en] (eisen (f->s f en) f)))
 
 
 (defn eisenf=
-  "Parses an eisen file and prints the syntax tree. Takes an optional
-   encoding, which defaults to UTF-8. Any errors are printed to stdout;
-   intended for testing at the REPL."
+  "Parses the code from an eisen file and prints the syntax tree.
+   Takes an optional encoding value, which defaults to UTF-8.
+   Any errors are printed to stdout; intended for testing at the REPL."
   ([f] (eisenf= f "UTF-8"))
   ([f en] (eisen= (f->s f en) f)))
 
@@ -224,7 +225,92 @@
 
 
 (defn init-eisen
-  "Initializes the Eisen library."
+  "Initializes the Eisen library and the eisen.user namespace.
+   A host program can use this function as-is or use a custom
+   setup according to particular needs.
+
+   It installs the following commands into the Eisen langauge:
+
+   asString
+   case
+   doseq
+   dosync
+   for
+   io!
+   locking
+   loop
+   setq
+   setv
+   sync
+   when
+   whenFirst
+   while
+   withOpen
+   withString
+
+   For the eisen.user namespace, it adds references to common
+   names in clojure.core, clojure.io.java, and clojure.xml,
+   making the following functions available, transformed into
+   camel case so they won't require backquotes.
+
+   clojure.core
+      assocIn
+      dropWhile
+      fileSeq
+      getIn
+      groupBy
+      hashMap
+      hashSet
+      lazySeq
+      lineSeq
+      mergeWith
+      notAny?
+      notEmpty
+      notEvery?
+      partitionAll
+      partitionBy
+      prStr
+      printStr
+      printlnStr
+      reFind
+      reGroups
+      reMatcher
+      reMatches
+      rePattern
+      reSeq
+      readLine
+      refSet
+      selectKeys
+      sortBy
+      sortedMap
+      sortedMapBy
+      sortedSet
+      sortedSetBy
+      splitAt
+      splitWith
+      takeLast
+      takeNth
+      takeWhile
+      treeSeq
+      updateIn
+      xmlSeq
+
+   clojure.java.io
+      file 
+      reader
+      writer
+      inputStream
+      outputStream
+
+   clojure.string
+      blank? 
+      join 
+      split 
+      trim
+      splitLines
+
+   clojure.xml
+      parse"
   []
   ;; Predefined expressions.
   (add-expression :when-expr  cc/whenex  cc/trans-whenex  "when")

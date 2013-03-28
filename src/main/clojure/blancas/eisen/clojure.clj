@@ -24,7 +24,10 @@
 
 
 (def whenex
-  "Parses a when expression."
+  "Parses a when expression.
+
+   'when' boolean-expr
+   'do' [expr ( ';' expr )*] 'end'"
   (bind [test (>> (word "when") orex)
 	 body doex]
     (return {:token :when-expr :test test :body body})))
@@ -45,7 +48,10 @@
 
 
 (def whileex
-  "Parses a while expression."
+  "Parses a while expression.
+
+   'while' boolean-expr
+   'do' [expr ( ';' expr )*] 'end'"
   (bind [test (>> (word "while") orex)
 	 body doex]
     (return {:token :while-expr :test test :body body})))
@@ -66,7 +72,10 @@
 
 
 (def loopex
-  "Parses a loop expression."
+  "Parses a loop expression.
+
+   'loop' ( (val decl) | (fun decl) )*
+   'in' expr ( ';' expr )* 'end'"
   (bind [_ (word "loop") decls bindings exprs in-sequence]
     (return {:token :loop-expr :decls decls :exprs exprs})))
 
@@ -89,7 +98,10 @@
 
 
 (def whenfex
-  "Parses a when-first expression."
+  "Parses a when-first expression.
+
+   'whenFirst' <name> '<-' expr
+   'do' expr ( ';' expr )* 'end'"
   (bind [name (>> (word "whenFirst") sym-arg)
 	 coll (>> (word "<-") expr)
 	 body doex]
@@ -113,7 +125,9 @@
 
 
 (def caseex
-  "Parses a case expression."
+  "Parses a case expression.
+
+   'case' expr 'of' (expr '=>' expr)+"
   (bind [test (between (word "case") (word "of") expr)
 	 body (sep-end-by semi (<*> pattern (>> (word "=>") expr)))
 	 _    (word "end")]
@@ -160,7 +174,10 @@
 
 
 (def forex
-  "Parses a for expression."
+  "Parses a for expression.
+
+   'for' '[' ( <name> '<-' expr [;] )*
+   ( let decl | when expr | while expr )* ']' expr"
   (>> (word "for")
       (bind [_     (sym \[)
 	     colls (comma-sep1 generator)
@@ -214,7 +231,11 @@
 
 
 (def doseqex
-  "Parses a doseq expression."
+  "Parses a doseq expression.
+
+   'doseq' '[' ( <name> '<-' expr [;] )*
+   ( let decl | when expr | while expr )* ']'
+   expr ( ';' expr )* 'end'"
   (>> (word "doseq")
       (bind [_     (sym \[)
 	     colls (comma-sep1 generator)
@@ -244,7 +265,10 @@
 
 
 (def wopenex
-  "Parses a with-open expression."
+  "Parses a with-open expression.
+
+   'withOpen' (val decl)*
+   'do' expr ( ';' expr )* 'end'"
   (bind [decls (>> (word "withOpen") bindings)
 	 body  doex]
     (return {:token :wopen-expr :decls decls :body body})))
@@ -268,7 +292,10 @@
 
 
 (def strex
-  "Parses a with-out-str expression."
+  "Parses a with-out-str expression.
+
+   'asString'
+   [expr ( ';' expr )*] 'end'"
   (bind [body (>> (word "asString") end-sequence)]
     (return {:token :str-expr :body body})))
 
@@ -287,7 +314,10 @@
 
 
 (def wstrex
-  "Parses a with-in-str expression."
+  "Parses a with-in-str expression.
+
+   'withString' expr
+   'do' [expr ( ';' expr )*] 'end'"
   (bind [sval (>> (word "withString") expr) body doex]
     (return {:token :wstr-expr :sval sval :body body})))
 
@@ -307,7 +337,10 @@
 
 
 (def transex
-  "Parses a transaction statement."
+  "Parses a transaction statement.
+
+   ( 'locking' | 'io' | 'sync' | 'dosync' )
+   [expr ( ';' expr )*] 'end'"
   (bind [key (word "locking" "io!" "sync" "dosync") body end-sequence]
     (let [stmt (symbol (str "clojure.core/" key))]
       (return {:token :trans-expr :stmt stmt :body body}))))
@@ -326,7 +359,9 @@
 
 
 (def setqex
-  "Parses a setq statement."
+  "Parses a setq statement.
+
+   'setq' <name> expr"
   (bind [name  (>> (word "setq") lisp-id) value expr]
     (return {:token :setq-expr :name name :value value})))
 
@@ -344,7 +379,9 @@
 
 
 (def setvex
-  "Parses a setv statement."
+  "Parses a setv statement.
+
+   'setv' <host-name> <eisen-name>"
   (bind [name  (>> (word "setv") (lexeme lisp-id)) id identifier]
     (return {:token :setv-expr :name name :value (:value id)})))
 

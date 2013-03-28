@@ -292,7 +292,8 @@
       'input-stream 'inputStream
       'output-stream 'outputStream })
 
-  (host-module clojure.string :only '(blank? join replace split trim))
-  (host-module clojure.string :rename {'split-lines 'splitLines})
+  (host-module clojure.string :only '(blank? join split trim)
+                              :rename {'split-lines 'splitLines})
 
+  (require 'clojure.xml)
   (host-module clojure.xml :only '(parse)))

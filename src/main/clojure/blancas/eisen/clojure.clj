@@ -84,7 +84,7 @@
 
 ;; +-------------------------------------------------------------+
 ;; | 'whenFirst' <name> '<-' expr                                |
-;; | 'in' expr ( ';' expr )* 'end'                               |
+;; | 'do' expr ( ';' expr )* 'end'                               |
 ;; +-------------------------------------------------------------+
 
 
@@ -92,17 +92,17 @@
   "Parses a when-first expression."
   (bind [name (>> (word "whenFirst") sym-arg)
 	 coll (>> (word "<-") expr)
-	 expr in-sequence]
-    (return {:token :whenf-expr :name name :coll coll :exprs expr})))
+	 body doex]
+    (return {:token :whenf-expr :name name :coll coll :body body})))
 
 
 (defn trans-whenfex
   "Translates a when-first expression."
-  [{:keys [name coll exprs]}]
+  [{:keys [name coll body]}]
   (monad [symbol (trans-expr name)
 	  _      (modify-se conj symbol)
 	  source (trans-expr coll)
-          body   (trans-exprs exprs)
+          body   (trans-expr body)
 	  _      (modify-se difference [symbol])]
     (->right `(clojure.core/when-first [~symbol ~source] ~@body))))
 
@@ -209,7 +209,7 @@
 ;; +-------------------------------------------------------------+
 ;; | 'doseq' '[' ( <name> '<-' expr [;] )*                       |
 ;; | ( let decl | when expr | while expr )* ']'                  |
-;; | 'in' expr ( ';' expr )* 'end'                               |
+;; | expr ( ';' expr )* 'end'                                    |
 ;; +-------------------------------------------------------------+
 
 
@@ -220,18 +220,18 @@
 	     colls (comma-sep1 generator)
              preds (many (<|> let-pred while-pred when-pred))
 	     _     (sym \])
-             body  in-sequence]
-        (return {:token :doseq-expr :colls colls :preds preds :body body}))))
+             exprs end-sequence]
+        (return {:token :doseq-expr :colls colls :preds preds :exprs exprs}))))
 
 
 (defn trans-doseqex
   "Translates a doseq expression."
-  [{:keys [colls preds body]}]
+  [{:keys [colls preds exprs]}]
   (let [env (map (comp symbol :name) colls)]
     (monad [_    (modify-se into env)
 	    coll (trans-bindings colls) 
 	    pred (trans-predicates preds)
-            body (trans-exprs body)
+            body (trans-exprs exprs)
 	    _    (modify-se difference env)]
       (let [decls (concat coll pred)]
         (->right `(clojure.core/doseq [~@(apply concat decls)] ~@body))))))
@@ -239,26 +239,26 @@
 
 ;; +-------------------------------------------------------------+
 ;; | 'withOpen' (val decl)*                                      |
-;; | 'in' expr ( ';' expr )* 'end'                               |
+;; | 'do' expr ( ';' expr )* 'end'                               |
 ;; +-------------------------------------------------------------+
 
 
 (def wopenex
   "Parses a with-open expression."
   (bind [decls (>> (word "withOpen") bindings)
-	 exprs in-sequence]
-    (return {:token :wopen-expr :decls decls :exprs exprs})))
+	 body  doex]
+    (return {:token :wopen-expr :decls decls :body body})))
 
 
 (defn trans-wopenex
   "Translates a with-open expression."
-  [{:keys [decls exprs]}]
+  [{:keys [decls body]}]
   (let [env (map (comp symbol :name) decls)]
     (monad [_     (modify-se into env)
 	    decls (trans-bindings decls)
-            exprs (trans-exprs exprs)
+            exprs (trans-expr body)
 	    _     (modify-se difference env)]
-      (->right `(with-open [~@(apply concat decls)] ~@exprs)))))
+      (->right `(with-open [~@(apply concat decls)] ~exprs)))))
 
 
 ;; +-------------------------------------------------------------+

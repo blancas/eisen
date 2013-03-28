@@ -1,10 +1,10 @@
 # Eisen
 
-Eisen is a language toolkit that supports the development of programmable applications and domain-specific languages.
+Eisen is a language toolkit that supports the development of programmable applications and domain-specific languages (DSL).
 
 ### The Language
 
-Eisen is designed to be an embedded langauge with the semantics of Clojure and a syntax similar to Standard ML.
+Eisen is designed to be an embedded language with the semantics of Clojure and a syntax similar to Standard ML.
 
 ### The Compiler
 
@@ -16,8 +16,10 @@ The Eisen library offers the following facilities:
 
 * Access to the host data and functions from user code.
 * Running user code from a host program.
-* Parsing and running Eisen code at the Clojure REPL.
+* Functions for parsing and running Eisen code at the Clojure REPL.
 * A simple Eisen REPL.
+* The compiler's parsing and translation functions.
+* Compiler hooks for extending Eisen or writing DSL's.
 
 ## Setup
 

@@ -12,7 +12,12 @@ Eisen compiles to Clojure, which compiles to Java bytecode.
 
 ### The Library
 
-The Eisen library lets host programs run user code that overrides data and functions for customizations and extensions. The library also exposes the compiler's parsing and translation functions for extending the Eisen language itself, and for developing domain-specific languages.
+The Eisen library offers the following facilities:
+
+* Access to the host data and functions from user code.
+* Running user code from a host program.
+* Parsing and running Eisen code at the Clojure REPL.
+* A simple Eisen REPL.
 
 ## Setup
 

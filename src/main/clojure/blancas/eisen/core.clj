@@ -233,6 +233,7 @@
 
    asString
    case
+   cond
    doseq
    dosync
    for
@@ -313,20 +314,21 @@
       parse"
   []
   ;; Predefined expressions.
-  (add-expression :when-expr  cc/whenex  cc/trans-whenex  "when")
-  (add-expression :while-expr cc/whileex cc/trans-whileex "while")
-  (add-expression :loop-expr  cc/loopex  cc/trans-loopex  "loop")
-  (add-expression :whenf-expr cc/whenfex cc/trans-whenfex "whenFirst")
-  (add-expression :case-expr  cc/caseex  cc/trans-caseex  "case" "of")
-  (add-expression :for-expr   cc/forex   cc/trans-forex   "for" "while" "when")
-  (add-expression :doseq-expr cc/doseqex cc/trans-doseqex "doseq" "while" "when")
-  (add-expression :wopen-expr cc/wopenex cc/trans-wopenex "withOpen")
-  (add-expression :str-expr   cc/strex   cc/trans-strex   "asString")
-  (add-expression :wstr-expr  cc/wstrex  cc/trans-wstrex  "withString")
-  (add-expression :trans-expr cc/transex cc/trans-transex
+  (add-expression :when-expr    cc/whenex  cc/trans-whenex  "when")
+  (add-expression :while-expr   cc/whileex cc/trans-whileex "while")
+  (add-expression :loop-expr    cc/loopex  cc/trans-loopex  "loop")
+  (add-expression :whenf-expr   cc/whenfex cc/trans-whenfex "whenFirst")
+  (add-expression :cljcond-expr cc/cljcond cc/trans-cljcond "cond")
+  (add-expression :case-expr    cc/caseex  cc/trans-caseex  "case" "of")
+  (add-expression :for-expr     cc/forex   cc/trans-forex   "for" "while" "when")
+  (add-expression :doseq-expr   cc/doseqex cc/trans-doseqex "doseq" "while" "when")
+  (add-expression :wopen-expr   cc/wopenex cc/trans-wopenex "withOpen")
+  (add-expression :str-expr     cc/strex   cc/trans-strex   "asString")
+  (add-expression :wstr-expr    cc/wstrex  cc/trans-wstrex  "withString")
+  (add-expression :trans-expr   cc/transex cc/trans-transex
 		  "locking" "io!" "sync" "dosync")
-  (add-expression :setq-expr  cc/setqex  cc/trans-setqex  "setq")
-  (add-expression :setv-expr  cc/setvex  cc/trans-setvex  "setv")
+  (add-expression :setq-expr    cc/setqex  cc/trans-setqex  "setq")
+  (add-expression :setv-expr    cc/setvex  cc/trans-setvex  "setv")
 
   ;; Aliases for avoiding backquotes in common functions.
   (host-module clojure.core

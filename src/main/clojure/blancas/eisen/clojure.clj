@@ -120,14 +120,40 @@
 
 
 ;; +-------------------------------------------------------------+
-;; | 'case' expr 'of' (expr '=>' expr)+                          |
+;; | 'cond' expr => expr                                         |
+;; | ( ';' expr => expr )* 'end'                                 |
+;; +-------------------------------------------------------------+
+
+
+(def cljcond
+  "Parses a cond expression.
+
+   'cond' expr => expr
+   ( ';' expr => expr )* 'end'"
+  (bind [_    (word "cond")
+	 body (sep-end-by semi (<*> expr (>> (word "=>") expr)))
+	 _    (word "end")]
+    (return {:token :cljcond-expr :test test :body (apply concat body)})))
+
+
+(defn trans-cljcond
+  "Translates a cond expression."
+  [ast]
+  (monad [body (trans-exprs (:body ast))]
+    (->right `(clojure.core/cond ~@body))))
+
+
+;; +-------------------------------------------------------------+
+;; | 'case' expr 'of' expr '=>' expr                             |
+;; | ( ';' expr => expr )* 'end'                                 |
 ;; +-------------------------------------------------------------+
 
 
 (def caseex
   "Parses a case expression.
 
-   'case' expr 'of' (expr '=>' expr)+"
+   'case' expr 'of' expr '=>' expr
+   ( ';' expr => expr )* 'end'"
   (bind [test (between (word "case") (word "of") expr)
 	 body (sep-end-by semi (<*> pattern (>> (word "=>") expr)))
 	 _    (word "end")]

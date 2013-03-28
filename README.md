@@ -1,6 +1,6 @@
 # Eisen
 
-Eisen is a language toolkit that supports the development of programmable applications and domain-specific languages (DSL).
+Eisen is a toolkit that supports the development of programmable applications and domain-specific languages (DSL).
 
 ### The Language
 

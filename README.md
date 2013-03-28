@@ -41,6 +41,8 @@ Maven:
 
 ## Documentation
 
+Eisen is documented in the [Wiki](https://github.com/blancas/eisen/wiki).
+
 ## License
 
 Copyright © 2013 Armando Blancas.

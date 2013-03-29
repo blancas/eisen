@@ -24,7 +24,7 @@
 (def expr-trans (atom {}))  ;; User-defined table of expression ranslators.
 (def decl-trans (atom {}))  ;; User-defined table of declaration translators.
 
-(def code-hook "A transformation of the generated code." identity)
+(def ^:dynamic code-hook "A transformation of the generated code." identity)
 
 
 (defn add-expr-trans

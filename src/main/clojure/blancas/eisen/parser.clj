@@ -39,7 +39,7 @@ Literal values follow the rules of Java and Clojure."
 (def expr-lst (atom ()))   ;; User-defined expression parsers.
 (def decl-lst (atom ()))   ;; User-defined declaration parsers.
 
-(def ast-hook "A transformation of the AST." identity)
+(def ^:dynamic ast-hook "A transformation of the AST." identity)
 
 
 (defn add-reserved

@@ -39,6 +39,8 @@ Literal values follow the rules of Java and Clojure."
 (def expr-lst (atom ()))   ;; User-defined expression parsers.
 (def decl-lst (atom ()))   ;; User-defined declaration parsers.
 
+(def ast-hook "A transformation of the AST." identity)
+
 
 (defn add-reserved
   "Adds the Eisen reserved word in the supplied collection."
@@ -666,6 +668,8 @@ Literal values follow the rules of Java and Clojure."
 (def eisen-code
   "Parses one or more declarations, or a single expressions."
   (bind [_ trim]
-    (let [basic (list mod-decl imp-decl fwd-decl val-decl fun-decl)]
-      (<|> (<$> flatten (many1 (apply <|> (concat @decl-lst basic))))
-	   (<$> vector expr)))))
+    (let [basic (list mod-decl imp-decl fwd-decl val-decl fun-decl)
+	  f-decl (comp ast-hook flatten)
+	  f-expr (comp ast-hook vector)]
+      (<|> (<$> f-decl (many1 (apply <|> (concat @decl-lst basic))))
+	   (<$> f-expr expr)))))

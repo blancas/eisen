@@ -24,6 +24,8 @@
 (def expr-trans (atom {}))  ;; User-defined table of expression ranslators.
 (def decl-trans (atom {}))  ;; User-defined table of declaration translators.
 
+(def code-hook "A transformation of the generated code." identity)
+
 
 (defn add-expr-trans
   "Adds a translator function from an expression AST to Clojure code,
@@ -412,10 +414,11 @@
    generated code and the result of the evaluation."
   [ast]
   (monad [code (trans-ast ast)]
-    (try
-      (->right [code (eval code)])
-      (catch Throwable t
-	(->left [code (str t)])))))
+    (let [code (code-hook code)]
+      (try
+        (->right [code (eval code)])
+        (catch Throwable t
+	  (->left [code (str t)]))))))
 
 
 (defn trans

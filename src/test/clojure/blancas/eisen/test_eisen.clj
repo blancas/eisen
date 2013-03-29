@@ -594,3 +594,40 @@
   (eisen "val dup = fn x => x + x")
   (fact "use a fn value in a val declaration"
     (eisen= "dup 9") => 18))
+
+
+(deftest test-1410
+  (fact "use a fn value as an argument"
+    (eisen= "map (fn x => x * x) [1 5]") => [1 4 9 16 25]))
+
+
+;; +-------------------------------------------------------------+
+;; |                      when construct.                        |
+;; |                                                             |
+;; | Here we init the eisen library for the rest of the tests.   |
+;; +-------------------------------------------------------------+
+
+
+(deftest test-1500
+  (let [code "when true do 99 end"]
+    (init-eisen)
+    (fact "a simple when"
+      (eisen= code) => 99)))
+
+
+(deftest test-1505
+  (let [code "when true do 99; 101 end"]
+    (fact "a simple when"
+      (eisen= code) => 101)))
+
+
+;; +-------------------------------------------------------------+
+;; |                      while construct.                       |
+;; +-------------------------------------------------------------+
+
+
+(deftest test-1605
+  (eisen "val cntr = atom 0")
+  (eisen "while deref cntr < 5 do swap! cntr inc; deref cntr end")
+  (fact "a simple loop with while"
+    (eisen= "deref cntr") => 5))

@@ -74,7 +74,7 @@
 (def loopex
   "Parses a loop expression.
 
-   'loop' ( (val decl) | (fun decl) )*
+   'loop' ( (val-decl) | (fun-decl) )*
    'in' expr ( ';' expr )* 'end'"
   (bind [_ (word "loop") decls bindings exprs in-sequence]
     (return {:token :loop-expr :decls decls :exprs exprs})))

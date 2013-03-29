@@ -631,3 +631,77 @@
   (eisen "while deref cntr < 5 do swap! cntr inc; deref cntr end")
   (fact "a simple loop with while"
     (eisen= "deref cntr") => 5))
+
+
+;; +-------------------------------------------------------------+
+;; |                      cond construct.                        |
+;; +-------------------------------------------------------------+
+
+
+(deftest test-1700
+  (let [code "cond false => 99; true => 101 end"]
+    (fact "a simple cond"
+      (eisen= code) => 101)))
+
+
+(deftest test-1705
+  (let [code "cond (1 >= 3) => \"1\"; (2 >= 3) => \"2\"; (3 >= 3) => \"3\"; end"]
+    (fact "a cond expr"
+      (eisen= code) => "3")))
+
+
+;; +-------------------------------------------------------------+
+;; |                    whenFirst construct.                     |
+;; +-------------------------------------------------------------+
+
+
+(deftest test-1800
+  (let [code "whenFirst x <- [1 5] do x + x end"]
+    (fact "whenFirst gets the first element"
+      (eisen= code) => 2)))
+
+
+;; +-------------------------------------------------------------+
+;; |                      loop construct.                        |
+;; +-------------------------------------------------------------+
+
+
+(deftest test-1900
+  (let [c1 "loop i = 0; x = 2 in "
+	c2 "if i < 8 then recur (i + 1) (x * 2) else x end"]
+    (fact "a loop with two bindings"
+      (eisen= (str c1 c2)) => 512)))
+
+
+;; +-------------------------------------------------------------+
+;; |                     list comprehension.                     |
+;; +-------------------------------------------------------------+
+
+
+(deftest test-2000
+  (init-eisen)
+  (let [code "for [n <- [1 10]] n*n"]
+    (fact "a for with one binding"
+      (eisen= code) => '(1 4 9 16 25 36 49 64 81 100))))
+
+
+(deftest test-2005
+  (let [code "for [ x <- [1 10], y <- [1 10] when x > y while x+y < 8] [x,y]"]
+    (fact "a for with two bindings"
+      (eisen= code) => '((2 1) (3 1) (3 2) (4 1) (4 2) (4 3) (5 1) (5 2) (6 1)))))
+
+
+;; +-------------------------------------------------------------+
+;; |                       case construct.                       |
+;; +-------------------------------------------------------------+
+
+
+(deftest test-2100
+  (init-eisen)
+  (let [c1 "case 1+1 of"
+        c2 "  0 => \"0\";"
+        c3 "  1 => \"1\";"
+        c4 "  2 => \"2\";"
+        c5 "  3 => \"3\" end"]
+    (fact "a simple case"
+      (eisen= (str c1 c2 c3 c4 c5)) => "2")))

@@ -7,8 +7,10 @@
 
 ;; Definitions.
 
-(def greeting "hello, %s!\n")
-(def subject "world")
+(def eisen-file "src/main/resources/hello/greeting.esn")
+
+(def greeting "hello, %s!\n")  ;; Default form of the greeting.
+(def subject "world")          ;; Default receiver of the greeting.
 
 (defn greet
   "Greets someone or something."
@@ -16,9 +18,9 @@
 
 ;; Extensions.
 
-(init-eisen)                                          ;; Initialize Eisen.
-(host-module user)                                    ;; Provide names to user code.
-(eisen-user "src/main/resources/hello/greeting.esn")  ;; Run user code.
+(init-eisen)         ;; Initialize Eisen.
+(host-module user)   ;; Add local names to eisen.user
+(eisenf eisen-file)  ;; Run user code.
 
 ;; Main program
 

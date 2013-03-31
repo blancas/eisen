@@ -23,6 +23,7 @@
 
 (def expr-trans (atom {}))  ;; User-defined table of expression ranslators.
 (def decl-trans (atom {}))  ;; User-defined table of declaration translators.
+(def auto-decls (atom {}))  ;; User-defined table of auto use decls for modules.
 
 (def ^:dynamic code-hook "A transformation of the generated code." identity)
 
@@ -37,6 +38,11 @@
   "Adds a translator function from a declaration AST to Clojure code,
    assigned to the supplied key."
   [key trans] (swap! expr-trans assoc key trans))
+
+
+(defn add-auto-decl
+  "Adds a use declaration to run upon declaring an Eisen module."
+  [key decl] (swap! auto-decls assoc key decl))
 
 
 ;; +-------------------------------------------------------------+
@@ -95,8 +101,11 @@
 (defn trans-mod
   "Translates an AST into a Clojure namespace call."
   [ast]
-  (let [sym-name (symbol (:name ast))]
-    (->right `(clojure.core/ns ~sym-name))))
+  (let [sym-name (symbol (:name ast))
+	imports  (for [[key val] @auto-decls]
+		   (let [filters (for [[f m] val] `(~f ~m))]
+		     `(clojure.core/use '[~key ~@(apply concat filters)])))]
+    (->right `(do (clojure.core/ns ~sym-name) ~@imports))))
 
 
 (defn trans-imp

@@ -11,7 +11,7 @@
   blancas.eisen.core
   (:require [blancas.eisen.clojure :as cc])
   (:use [blancas.eisen.parser :only (eisen-code)]
-	[blancas.eisen.trans :only (trans)]
+	[blancas.eisen.trans :only (trans add-auto-decl)]
         [blancas.kern.core :only (parse run print-error f->s)]))
 
 
@@ -211,48 +211,33 @@
      (ns eisen.user) ~(list* 'refer (list 'quote tgt) args) (in-ns ns#)))
 
 
-(defn eisen-user
-  "Evaluates the contents of the file spacified by 'path'
-   and runs the function eisen.user/main, if one is defined."
-  [path]
-  (let [local (symbol (str *ns*))]
-    (ns eisen.user)
-    (eisenf path)
-    (in-ns local)
-    (if-let [v (resolve 'eisen.user/main)]
-      (if (and (bound? v) (fn? (var-get v)))
-	((var-get v))))))
-
-
 (defn init-eisen
-  "Initializes the Eisen library and the eisen.user namespace.
-   A host program can use this function as-is or use a custom
-   setup according to particular needs.
+  "Initializes the Eisen library. This is a convenience function that
+   a host program may omit or override with custom calls.
 
-   It installs the following commands into the Eisen langauge:
+   (1) It installs the following commands into the Eisen langauge:
 
-   asString
-   case
-   cond
-   doseq
-   dosync
-   for
-   io!
-   locking
-   loop
-   setq
-   setv
-   sync
-   when
-   whenFirst
-   while
-   withOpen
-   withString
+       * asString
+       * case
+       * cond
+       * doseq
+       * dosync
+       * for
+       * io!
+       * locking
+       * loop
+       * setq
+       * setv
+       * sync
+       * when
+       * whenFirst
+       * while
+       * withOpen
+       * withString
 
-   For the eisen.user namespace, it adds references to common
-   names in clojure.core, clojure.io.java, and clojure.xml,
-   making the following functions available, transformed into
-   camel case so they won't require backquotes.
+   (2) Installs the following imports, to be applied to any Eisen module
+       so that common Clojure names are available automatically and with
+       in idiomatic camel case instead of embedded dashes.
 
    clojure.core
       assocIn
@@ -313,26 +298,28 @@
    clojure.xml
       parse"
   []
-  ;; Predefined expressions.
-  (add-expression :when-expr    cc/whenex  cc/trans-whenex  "when")
-  (add-expression :while-expr   cc/whileex cc/trans-whileex "while")
-  (add-expression :loop-expr    cc/loopex  cc/trans-loopex  "loop")
-  (add-expression :whenf-expr   cc/whenfex cc/trans-whenfex "whenFirst")
-  (add-expression :cljcond-expr cc/cljcond cc/trans-cljcond "cond")
-  (add-expression :case-expr    cc/caseex  cc/trans-caseex  "case" "of")
-  (add-expression :for-expr     cc/forex   cc/trans-forex   "for" "while" "when")
-  (add-expression :doseq-expr   cc/doseqex cc/trans-doseqex "doseq" "while" "when")
-  (add-expression :wopen-expr   cc/wopenex cc/trans-wopenex "withOpen")
-  (add-expression :str-expr     cc/strex   cc/trans-strex   "asString")
-  (add-expression :wstr-expr    cc/wstrex  cc/trans-wstrex  "withString")
-  (add-expression :trans-expr   cc/transex cc/trans-transex
-		  "locking" "io!" "sync" "dosync")
-  (add-expression :setq-expr    cc/setqex  cc/trans-setqex  "setq")
-  (add-expression :setv-expr    cc/setvex  cc/trans-setvex  "setv")
+  (add-expression  :when-expr    cc/whenex  cc/trans-whenex  "when")
+  (add-expression  :while-expr   cc/whileex cc/trans-whileex "while")
+  (add-expression  :loop-expr    cc/loopex  cc/trans-loopex  "loop")
+  (add-expression  :whenf-expr   cc/whenfex cc/trans-whenfex "whenFirst")
+  (add-expression  :cljcond-expr cc/cljcond cc/trans-cljcond "cond")
+  (add-expression  :case-expr    cc/caseex  cc/trans-caseex  "case" "of")
+  (add-expression  :for-expr     cc/forex   cc/trans-forex   "for" "while" "when")
+  (add-expression  :doseq-expr   cc/doseqex cc/trans-doseqex "doseq" "while" "when")
+  (add-expression  :wopen-expr   cc/wopenex cc/trans-wopenex "withOpen")
+  (add-expression  :str-expr     cc/strex   cc/trans-strex   "asString")
+  (add-expression  :wstr-expr    cc/wstrex  cc/trans-wstrex  "withString")
+  (add-expression  :trans-expr   cc/transex cc/trans-transex
+		   "locking" "io!" "sync" "dosync")
 
-  ;; Aliases for avoiding backquotes in common functions.
-  (host-module clojure.core
-    :rename {
+  (add-expression  :setq-expr    cc/setqex  cc/trans-setqex  "setq")
+  (add-expression  :setv-expr    cc/setvex  cc/trans-setvex  "setv")
+  (add-declaration :setq-expr    cc/setqex  cc/trans-setqex  "setq")
+  (add-declaration :setv-expr    cc/setvex  cc/trans-setvex  "setv")
+
+  (add-auto-decl
+    'clojure.core
+    { :rename {
       'assoc-in       'assocIn
       'drop-while     'dropWhile
       'file-seq       'fileSeq
@@ -372,16 +359,21 @@
       'take-while     'takeWhile
       'tree-seq       'treeSeq
       'update-in      'updateIn
-      'xml-seq        'xmlSeq})
+      'xml-seq        'xmlSeq }})
 
-  (host-module clojure.java.io :only '(file reader writer))
-  (host-module clojure.java.io
-    :rename {
+  (add-auto-decl
+    'clojure.java.io { :only '(file reader writer) })
+
+  (add-auto-decl
+    'clojure.java.io
+    { :rename {
       'input-stream 'inputStream
-      'output-stream 'outputStream })
+      'output-stream 'outputStream }})
 
-  (host-module clojure.string :only '(blank? join split trim)
-                              :rename {'split-lines 'splitLines})
+  (add-auto-decl
+    'clojure.string
+    { :only '(blank? join split trim)
+      :rename {'split-lines 'splitLines} })
 
-  (require 'clojure.xml)
-  (host-module clojure.xml :only '(parse)))
+  (add-auto-decl
+    'clojure.xml { :only '(parse) }))

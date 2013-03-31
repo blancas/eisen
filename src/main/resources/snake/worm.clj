@@ -7,7 +7,7 @@
 	   (javax.swing JPanel JFrame Timer JOptionPane)
            (java.awt.event ActionListener KeyListener))
   (:use snake.import-static
-        [blancas.eisen.core :only (host-module, init-eisen eisen-repl)]))
+        [blancas.eisen.core :only (host-module, init-eisen eisen)]))
 
 (import-static java.awt.event.KeyEvent VK_LEFT VK_RIGHT VK_UP VK_DOWN)
 
@@ -29,7 +29,7 @@
 (def height       50)
 (def point-size   10)
 (def turn-millis  75)
-(def win-length    5)
+(def win-length    2)
 
 (def dirs { VK_LEFT  [-1  0] 
             VK_RIGHT [ 1  0]
@@ -102,10 +102,16 @@
 ; ----------------------------------------------------------
 
 (defn setup-eisen []
-  (init-eisen)
-  (host-module snake.worm)
-  (in-ns 'eisen.user)
-  (blancas.eisen.core/eisen-repl))
+  (init-eisen))
+
+(defn run-eisen []
+  (let [decls (JOptionPane/showInputDialog
+	        nil "Paste your code here:" "Change the game"
+	        JOptionPane/PLAIN_MESSAGE)]
+    (println decls)
+    (println (eisen decls))
+    (println (eisen "main"))
+    (println body)))
 
 ; ----------------------------------------------------------
 ; gui
@@ -135,10 +141,14 @@
       (update-positions snake apple)
       (when (lose? @snake)
 	(reset-game snake apple)
-	(JOptionPane/showMessageDialog frame "You lose!"))
+	(JOptionPane/showMessageDialog frame "You lose!")
+        (println (eisen "setq body [#[50,50]]"))
+	(println body))
       (when (win? @snake)
 	(reset-game snake apple)
-	(JOptionPane/showMessageDialog frame "You win!"))
+	(JOptionPane/showMessageDialog frame "You win!")
+        (println (eisen "setq body [#[50,50]]"))
+	(println body))
       (.repaint this))
     (keyPressed [e]
       (update-direction snake (dirs (.getKeyCode e))))
@@ -148,8 +158,8 @@
     (keyReleased [e])
     (keyTyped [e])))
 
-
-(defn game [] 
+(defn game []
+  (setup-eisen)
   (let [snake (ref (create-snake))
 	apple (ref (create-apple))
 	frame (JFrame. "Worm")
@@ -163,5 +173,4 @@
       (.pack)
       (.setVisible true))
     (.start timer)
-    (setup-eisen)
     [snake, apple, timer]))

@@ -1,3 +1,5 @@
+module eisen.user
+
 (* Asks for the name on behalf of the host app. *)
 
 fun ask = do print "Who are you? ";
@@ -7,4 +9,4 @@ fun ask = do print "Who are you? ";
 
 (* Sets the hook as the function ask. *)
 
-fun main = setv hook1 ask
+setv hook ask

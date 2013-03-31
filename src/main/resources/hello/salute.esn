@@ -4,9 +4,9 @@ module eisen.user
 
 fun ask = do print "Who are you? ";
              flush;
-             setq subject readLine
+             setq subject = readLine
           end
 
 (* Sets the hook as the function ask. *)
 
-setv hook ask
+setv hook = ask

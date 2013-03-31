@@ -387,8 +387,9 @@
 (def setqex
   "Parses a setq statement.
 
-   'setq' <name> expr"
-  (bind [name  (>> (word "setq") lisp-id) value expr]
+   'setq' <name> = expr"
+  (bind [name  (>> (word "setq") (lexeme lisp-id))
+	 value (>> (word "=") expr)]
     (return {:token :setq-expr :name name :value value})))
 
 
@@ -407,8 +408,9 @@
 (def setvex
   "Parses a setv statement.
 
-   'setv' <host-name> <eisen-name>"
-  (bind [name  (>> (word "setv") (lexeme lisp-id)) id identifier]
+   'setv' <host-name> = <eisen-name>"
+  (bind [name (>> (word "setv") (lexeme lisp-id))
+	 id   (>> (word "=") identifier)]
     (return {:token :setv-expr :name name :value (:value id)})))
 
 

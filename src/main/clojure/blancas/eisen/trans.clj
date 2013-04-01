@@ -341,9 +341,9 @@
   "Translates a setv statement."
   [{:keys [name value]}]
   (if @using-model
-    (->right `(blancas.eisen.core/->m ~(symbol name) (var-get (var ~(symbol value)))))
+    (->right `(blancas.eisen.core/->m ~(symbol name) ~(symbol value)))
     (->right `(alter-var-root (var ~(symbol name))
-			      (constantly (var-get (var ~(symbol value))))))))
+			      (constantly ~(symbol value))))))
 
 
   (defn trans-expr

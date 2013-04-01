@@ -16,8 +16,8 @@ comment-line         --
 nested-comments      Yes
 identifier-start     Lowercase or _
 identifier-letter    Alphanumeric or _ ' ? ! . /
-reserved-names       module import declare val fun fn _
-		     if then else let letrec in do end
+reserved-names       module import declare val fun fn _ if
+		     then else let letrec in do end setq setv
 case-sensitive       Yes
 line-continuation    Backslash
 trim-newline         Yes
@@ -83,8 +83,8 @@ Literal values follow the rules of Java and Clojure."
     :nested-comments     true
     :identifier-start   (<|> lower (sym* \_))
     :identifier-letter  (<|> alpha-num (one-of* "_'?!./"))
-    :reserved-names     ["module" "import" "declare" "val" "fun" "fn" "_"
-			 "if" "then" "else" "let" "letrec" "in" "do" "end"]))
+    :reserved-names     ["module" "import" "declare" "val" "fun" "fn" "_" "if"
+			 "then" "else" "let" "letrec" "in" "do" "end" "setq" "setv"]))
 
 
 (def rec (lex/make-parsers eisen-style))
@@ -607,10 +607,28 @@ Literal values follow the rules of Java and Clojure."
     (return {:token :letrec-expr :decls decls :exprs exprs})))
 
 
+(def setqex
+  "Parses a setq statement.
+
+   'setq' <name> = expr"
+  (bind [name  (>> (word "setq") (lexeme lisp-id))
+	 value (>> (word "=") expr)]
+    (return {:token :setq-expr :name name :value value})))
+
+
+(def setvex
+  "Parses a setv statement.
+
+   'setv' <host-name> = <eisen-name>"
+  (bind [name (>> (word "setv") (lexeme lisp-id))
+	 id   (>> (word "=") identifier)]
+    (return {:token :setv-expr :name name :value (:value id)})))
+
+
 (def expr
   "Parses an Eisen expression."
   (bind [_ trim]
-    (let [basic (list doex condex letex letrec fun-lit orex)]
+    (let [basic (list doex condex letex letrec fun-lit setqex setvex orex)]
       (apply <|> (concat @expr-lst basic)))))
 
 
@@ -668,7 +686,7 @@ Literal values follow the rules of Java and Clojure."
 (def eisen-code
   "Parses one or more declarations, or a single expressions."
   (bind [_ trim]
-    (let [basic (list mod-decl imp-decl fwd-decl val-decl fun-decl)
+    (let [basic (list mod-decl imp-decl fwd-decl setqex setvex val-decl fun-decl)
 	  f-decl (comp ast-hook flatten)
 	  f-expr (comp ast-hook vector)]
       (<|> (<$> f-decl (many1 (apply <|> (concat @decl-lst basic))))

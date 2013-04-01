@@ -27,6 +27,8 @@
 
 (def ^:dynamic code-hook "A transformation of the generated code." identity)
 
+(def using-model (atom false)) ;; Using a host model for overrides?
+
 
 (defn add-expr-trans
   "Adds a translator function from an expression AST to Clojure code,
@@ -326,7 +328,25 @@
     (->right `(blancas.morph.core/mcf ~env ~code))))
 
 
-(defn trans-expr
+(defn trans-setqex
+  "Translates a setq statement."
+  [{:keys [name value]}]
+  (monad [source (trans-expr value)]
+    (if @using-model
+      (->right `(blancas.eisen.core/->m ~(symbol name) ~source))
+      (->right `(alter-var-root (var ~(symbol name)) (constantly ~source))))))
+
+
+(defn trans-setvex
+  "Translates a setv statement."
+  [{:keys [name value]}]
+  (if @using-model
+    (->right `(blancas.eisen.core/->m ~(symbol name) (var-get (var ~(symbol value)))))
+    (->right `(alter-var-root (var ~(symbol name))
+			      (constantly (var-get (var ~(symbol value))))))))
+
+
+  (defn trans-expr
   "Translates an AST into a Clojure expression."
   [ast]
   (case (:token ast)
@@ -386,6 +406,10 @@
     :letrec-expr (trans-letrec ast)
 
     :fun-lit     (trans-funlit ast)
+
+    :setq-expr   (trans-setqex ast)
+
+    :setv-expr   (trans-setvex ast)
 
     ;; User-defined expression translator.
 

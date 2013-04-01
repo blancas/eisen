@@ -180,6 +180,29 @@
 ;; |                   Extending Applications.                   |
 ;; +-------------------------------------------------------------+
 
+(def model (atom {}))
+
+(defmacro ->m
+  "Puts on or more key value pairs into the model. A key must be
+   an unquoted symbol; a value may be any Clojure object."
+  [& args]
+  (reset! blancas.eisen.trans/using-model true)
+  (let [n (count args)]
+    (when (pos? n)
+      (when (odd? n)
+	(throw (Exception. "Macro ->m takes an even number of arguments")))
+      (let [pairs (for [[k v] (partition 2 args)]
+		    `('~(clojure.core/symbol (clojure.core/name k)) ~v))]
+        `(clojure.core/swap! model clojure.core/assoc
+			     ~@(clojure.core/apply concat pairs))))))
+
+
+(defmacro m->
+  "Looks up a key in the model and returns its value.
+   A key must be an unquoted symbol."
+  [k] `(clojure.core/get @blancas.eisen.core/model
+			 '~(clojure.core/symbol (clojure.core/name k))))
+
 
 (defmacro host-name
   "Creates a reference from the eisen.user namespace to the
@@ -311,11 +334,6 @@
   (add-expression  :wstr-expr    cc/wstrex  cc/trans-wstrex  "withString")
   (add-expression  :trans-expr   cc/transex cc/trans-transex
 		   "locking" "io!" "sync" "dosync")
-
-  (add-expression  :setq-expr    cc/setqex  cc/trans-setqex  "setq")
-  (add-expression  :setv-expr    cc/setvex  cc/trans-setvex  "setv")
-  (add-declaration :setq-expr    cc/setqex  cc/trans-setqex  "setq")
-  (add-declaration :setv-expr    cc/setvex  cc/trans-setvex  "setv")
 
   (add-auto-decl
     'clojure.core

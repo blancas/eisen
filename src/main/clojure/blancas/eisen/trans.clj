@@ -88,8 +88,16 @@
 
 
 (defn make-ref
-  "Encodes a reference for a local symbol."
+  "Encodes a reference to a local symbol."
   [s] `(if (fn? ~s) (~s) ~s))
+
+
+(defn ref-host [name]
+  "Encodes a reference to a host data element."
+  (let [letters (drop-while #(= % \_) name)
+	sym-name (symbol (clojure.string/join letters))]
+    `(let [v# (blancas.eisen.core/m-> ~sym-name)]
+       (if (fn? v#) (v#) v#))))
 
 
 ;; +-------------------------------------------------------------+
@@ -158,26 +166,30 @@
   (let [sym-name (symbol value)]
     (if (clazz? sym-name)
       (->right sym-name)
-      (monad [env get-se]
-        (if (contains? env sym-name)
-          (->right (make-ref sym-name))
-	  (if-let [var-inst (resolve sym-name)]
-            (if (function? var-inst)
-	      (->right `(~sym-name))
-	      (->right sym-name))
-            (->left (error pos "undeclared identifier: %s" value))))))))
+      (if (.startsWith value "_")
+	(->right (ref-host (name sym-name)))
+        (monad [env get-se]
+          (if (contains? env sym-name)
+            (->right (make-ref sym-name))
+	    (if-let [var-inst (resolve sym-name)]
+              (if (function? var-inst)
+	        (->right `(~sym-name))
+	        (->right sym-name))
+              (->left (error pos "undeclared identifier: %s" value)))))))))
 
 
 (defn trans-idarg
   "Translates a reference to an identifier as an argument."
   [{:keys [value pos]}]
   (let [sym-name (symbol value)]
-    (monad [env get-se]
-      (if (contains? env sym-name)
-        (->right (make-ref sym-name))
-	(if (resolve sym-name)
-	  (->right sym-name)
-          (->left (error pos "undeclared identifier: %s" value)))))))
+    (if (.startsWith value "_")
+      (->right (ref-host (name sym-name)))
+      (monad [env get-se]
+        (if (contains? env sym-name)
+          (->right (make-ref sym-name))
+	  (if (resolve sym-name)
+	    (->right sym-name)
+            (->left (error pos "undeclared identifier: %s" value))))))))
 
 
 (defn trans-funcall

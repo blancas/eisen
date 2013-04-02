@@ -1,0 +1,15 @@
+module eisen.user
+
+(* Asks for the name on behalf of the host app. *)
+
+fun ask = let previous = _subject
+          in
+             print "Who are you? ";
+             flush;
+             setq subject = readLine;
+             println "Ciao," previous
+          end
+
+(* Sets the hook as the function ask. *)
+
+setv hook = ask

@@ -42,8 +42,12 @@
   ([text]
    (eisen text ""))
   ([text source]
-   (let [ast (parse-eisen text source)]
-     (if (:ok ast) (trans (:decls ast)) ast))))
+    (let [current (symbol (str *ns*))]
+      (try
+        (let [ast (parse-eisen text source)]
+          (if (:ok ast) (trans (:decls ast)) ast))
+        (finally
+          (in-ns current))))))
 
 
 (defn eisen=

@@ -5,11 +5,10 @@
   (load-file "src/main/resources/hello/ciao.clj")
 )
 
-;; Definitions.
-
+;; Expected location of user code.
 (def eisen-file "src/main/resources/hello/ciao.esn")
 
-;; Host model
+;; The host model
 (->m greeting "Hello, %s!\n"  ;; Default form of the greeting.
      subject  "world"         ;; Default receiver of the greeting.
      hook     nil)            ;; Something to do before the greeting.
@@ -19,11 +18,10 @@
   [g x] (printf g x))
 
 ;; Extensions.
-
-(init-eisen)         ;; Initialize Eisen.
+(init-eisen)         ;; Setup the default Eisen configuration.
 (eisenf eisen-file)  ;; Run user code from the well-known place.
 
 ;; Main program.
 
-(when (m-> hook) ((m-> hook)))        ;; Run user-defined code.
+(run-> hook)                          ;; Run user-defined code.
 (greet (m-> greeting) (m-> subject))  ;; Greets the subject.

@@ -1,6 +1,6 @@
-module eisen.user
+module ciao
 
-(* Asks for the name on behalf of the host app. *)
+(* Asks for the name on behalf of the host program. *)
 
 fun ask = let previous = _subject
           in

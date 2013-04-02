@@ -20,6 +20,9 @@
 ;; +-------------------------------------------------------------+
 
 
+(declare init-eisen)
+
+
 (defn parse-eisen
   "Parses the supplied Eisen code; returns an abstract syntax tree (AST)."
   ([text]
@@ -34,7 +37,9 @@
 (defn eisen
   "Translates the supplied Eisen code into Clojure and evaluates
    the resulting forms. If given an expression, it will evaluate it
-   and return the result in the :value field. Returns a map with:
+   and return the result in the :value field.
+
+   Returns a map with:
    :ok     true on success; false otherwise
    :value  if ok, the value of the last form
    :decls  if ok, a vector of Clojure forms
@@ -83,52 +88,6 @@
    Any errors are printed to stdout; intended for testing at the REPL."
   ([f] (eisenf= f "UTF-8"))
   ([f en] (eisen= (f->s f en) f)))
-
-
-;; +-------------------------------------------------------------+
-;; |                      Extending Eisen.                       |
-;; +-------------------------------------------------------------+
-
-(declare init-eisen)
-
-(defn add-expression
-  "Extends Eisen with the ability to parse and translate
-   a new type of expression. Parameters:
-
-   token   A keyword that identifies the translator.
-
-   parser  A Kern parser that produces an Eisen AST, which is a
-           map with a :token field whose value is token (above).
-           Any other fields collect data for the translator.
-
-   trans   A function that translates an AST to Clojure code
-           using any data produced by the parser.
-
-   words   Any words to be reserved for this parser's syntax."
-  [token parser trans & words]
-  (blancas.eisen.parser/add-expr parser)
-  (blancas.eisen.trans/add-expr-trans token trans)
-  (blancas.eisen.parser/add-reserved words))
-
-
-(defn add-declaration
-  "Extends Eisen with the ability to parse and translate
-   a new type of top-level declaration. Parameters:
-
-   token   A keyword that identifies the translator.
-
-   parser  A Kern parser that produces an Eisen AST, which is a
-           map with a :token field whose value is token (above).
-           Any other fields collect data for the translator.
-
-   trans   A function that translates an AST to Clojure code
-           using any data produced by the parser.
-
-   words   Any words to be reserved for this parser's syntax."
-  [token parser trans & words]
-  (blancas.eisen.parser/add-decl parser)
-  (blancas.eisen.trans/add-decl-trans token trans)
-  (blancas.eisen.parser/add-reserved words))
 
 
 (defn read-eisen
@@ -181,10 +140,57 @@
 
 
 ;; +-------------------------------------------------------------+
+;; |                      Extending Eisen.                       |
+;; +-------------------------------------------------------------+
+
+
+(defn add-expression
+  "Extends Eisen with the ability to parse and translate
+   a new type of expression. Parameters:
+
+   token   A keyword that identifies the translator.
+
+   parser  A Kern parser that produces an Eisen AST, which is a
+           map with a :token field whose value is token (above).
+           Any other fields collect data for the translator.
+
+   trans   A function that translates an AST to Clojure code
+           using any data produced by the parser.
+
+   words   Any words to be reserved for this parser's syntax."
+  [token parser trans & words]
+  (blancas.eisen.parser/add-expr parser)
+  (blancas.eisen.trans/add-expr-trans token trans)
+  (blancas.eisen.parser/add-reserved words))
+
+
+(defn add-declaration
+  "Extends Eisen with the ability to parse and translate
+   a new type of top-level declaration. Parameters:
+
+   token   A keyword that identifies the translator.
+
+   parser  A Kern parser that produces an Eisen AST, which is a
+           map with a :token field whose value is token (above).
+           Any other fields collect data for the translator.
+
+   trans   A function that translates an AST to Clojure code
+           using any data produced by the parser.
+
+   words   Any words to be reserved for this parser's syntax."
+  [token parser trans & words]
+  (blancas.eisen.parser/add-decl parser)
+  (blancas.eisen.trans/add-decl-trans token trans)
+  (blancas.eisen.parser/add-reserved words))
+
+
+;; +-------------------------------------------------------------+
 ;; |                   Extending Applications.                   |
 ;; +-------------------------------------------------------------+
 
+
 (def model (atom {}))
+
 
 (defmacro ->m
   "Puts on or more key value pairs into the model. A key must be
@@ -206,6 +212,13 @@
    A key must be an unquoted symbol."
   [k] `(clojure.core/get @blancas.eisen.core/model
 			 '~(clojure.core/symbol (clojure.core/name k))))
+
+
+(defmacro run->
+  "If the name has a value in the host model it gets called along
+   with any other supplied arguments."
+  [name & more]
+  `(if (m-> ~name) (apply (m-> ~name) ~more)))
 
 
 (defmacro host-name

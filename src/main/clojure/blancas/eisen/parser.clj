@@ -432,7 +432,9 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def fun-lit
-  "Parses a function literal definition."
+  "Parses a function literal definition.
+
+   'fn' parameter* '=>' expression"
   (bind [_     (word "fn")
 	 parm  (many id-formal)
 	 _     (word "=>")
@@ -442,7 +444,21 @@ Literal values follow the rules of Java and Clojure."
 
 (def pattern
   "Either a literal value, a wildcard, or a name wildcard
-   in a pattern-matching expression."
+   in a pattern-matching expression.
+
+   Either one of:
+   * Character
+   * String
+   * Decimal number
+   * Octal number
+   * Hex number
+   * Floating-point number
+   * Boolean
+   * Nil
+   * List
+   * A name
+   * The wildcard _
+   * Vector pattern"
   (<|> key-name
        char-lit
        string-lit
@@ -460,7 +476,24 @@ Literal values follow the rules of Java and Clojure."
 
 (def argument
   "An argument to a function call; this does not include a function call
-   directly, but only through an expression in parenthesis."
+   directly, but only through an expression in parenthesis.
+
+   Either one of:
+   * Character
+   * String
+   * Decimal number
+   * Octal number
+   * Hex number
+   * Floating-point number
+   * Boolean
+   * Nil
+   * List
+   * Vector
+   * Set
+   * Map
+   * Regular expression
+   * Value reference
+   * A sequenced expression in parenthesis"   
   (<|> key-name
        char-lit
        string-lit
@@ -499,7 +532,25 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def factor
-  "A factor is an operand within an expression."
+  "A factor is an operand within an expression.
+
+   Either one of:
+   * Character
+   * String
+   * Decimal number
+   * Octal number
+   * Hex number
+   * Floating-point number
+   * Boolean
+   * Nil
+   * List
+   * Vector
+   * Set
+   * Map
+   * Regular expression
+   * Value reference
+   * Function call
+   * An expression in parenthesis"
   (<|> key-name
        char-lit
        string-lit
@@ -545,7 +596,9 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def local-binding
-  "Parses a val or fun binding for let and similar constructs."
+  "Parses a val or fun binding for let and similar constructs.
+
+   identifier parameter* '=' expression"
   (bind [name identifier
 	 parm (many id-formal)
 	 val  (>> (sym \=) expr)]
@@ -556,38 +609,52 @@ Literal values follow the rules of Java and Clojure."
 
 (def bindings
   "Parses zero or more val and fun declarations
-   as the equivalent of Clojure bindings."
+   as the equivalent of Clojure bindings.
+
+   local-binding ( ';' local-binding )* ( ';' )*"
   (<$> flatten (sep-end-by semi local-binding)))
 
 
 (def in-sequence
   "Parses expressions surrounded by in .. end.
-   Returns a vector of declarations, not a token map."
+   Returns a vector of declarations, not a token map.
+
+   'in' expression ( ';' expression )* ( ';' )* 'end'"
   (between (word "in") (word "end") (sep-end-by semi (fwd expr))))
 
 
 (def end-sequence
   "Parses expressions separated by semicolons ending with 'end'.
-   Returns a vector of declarations, not a token map."
+   Returns a vector of declarations, not a token map.
+
+   expression ( ';' expression )* ( ';' )* 'end'"
   (<< (sep-end-by semi (fwd expr)) (word "end")))
 
 
 (def seqex
   "Parses sequenced expressions as a single function arguments.
-   Use as an alternative to do ... end. Returns the last value."
+   It's an alternative to do ... end as argument in function
+   calls. Returns the last value.
+
+   '(' expression ( ';' expression )* ( ';' )* ')'"
   (bind [xs (parens (sep-end-by semi (fwd expr)))]
     (return {:token :seq-expr :value xs})))
 
 
 (def doex
   "Parses sequenced expressions; like seqex but using 'do'
-   and 'end'. Returns the value of the last expression."
+   and 'end'. Returns the value of the last expression.
+
+   'do' expression ( ';' expression )* ( ';' )* 'end'"
   (bind [xs (between (word "do") (word "end") (sep-end-by semi (fwd expr)))]
     (return {:token :seq-expr :value xs})))
 
 
 (def condex
-  "Parses a conditional expression."
+  "Parses a conditional expression.
+
+   'if' expression
+   'then' expression ( 'else' expression )?"
   (bind [test (>> (word "if") orex)
 	 then (>> (word "then") expr)
 	 else (optional (>> (word "else") expr))]
@@ -595,14 +662,26 @@ Literal values follow the rules of Java and Clojure."
 	 
 
 (def letex
-  "Parses a let expression."
+  "Parses a let expression.
+
+   'let'
+     (  name = expression
+      | name parameter* = expression
+     )*
+   'in' expression ( ';' expression )* ( ';' )* 'end'"
   (bind [_ (word "let") decls bindings exprs in-sequence]
     (return {:token :let-expr :decls decls :exprs exprs})))
 
 
 (def letrec
   "Parses a letrec expression. Bindings are functions that
-   can be recursive or mutually recursive."
+   can be recursive or mutually recursive.
+
+   'letrec'
+     (  name = expression
+      | name parameter* = expression
+     )*
+   'in' expression ( ';' expression )* ( ';' )* 'end'"
   (bind [_ (word "letrec") decls bindings exprs in-sequence]
     (return {:token :letrec-expr :decls decls :exprs exprs})))
 
@@ -610,7 +689,7 @@ Literal values follow the rules of Java and Clojure."
 (def setqex
   "Parses a setq statement.
 
-   'setq' <name> = expr"
+   'setq' host-name = expression"
   (bind [name  (>> (word "setq") (lexeme lisp-id))
 	 value (>> (word "=") expr)]
     (return {:token :setq-expr :name name :value value})))
@@ -619,14 +698,21 @@ Literal values follow the rules of Java and Clojure."
 (def setvex
   "Parses a setv statement.
 
-   'setv' <host-name> = <eisen-name>"
+   'setv' host-name = eisen-name"
   (bind [name (>> (word "setv") (lexeme lisp-id))
 	 id   (>> (word "=") identifier)]
     (return {:token :setv-expr :name name :value (:value id)})))
 
 
 (def expr
-  "Parses an Eisen expression."
+  "Parses an Eisen expression.
+
+   Either one of:
+   * Sequenced expression, 'do' .. 'end'
+   * Conditional expression, 'if'
+   * Binding expression, 'let', 'letrec'
+   * Function literal, 'fn'
+   * Setting host data, 'setq', 'setv'"
   (bind [_ trim]
     (let [basic (list doex condex letex letrec fun-lit setqex setvex orex)]
       (apply <|> (concat @expr-lst basic)))))
@@ -638,13 +724,20 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def mod-decl
-  "Parses a module declaration."
+  "Parses a module declaration.
+
+   import name[.name]*"
   (bind [_ (word "module") name (lexeme lisp-id)]
     (return {:token :mod :name name})))
 
 
 (def qualifier
-  "Parses an import qualifier."
+  "Parses an import qualifier.
+
+   (  'as' identifier
+    | 'only' '[' name ( ',' name )* ']'
+    | 'hide' '[' name ( ',' name )* ']'
+   )"
   (<|> (bind [_ (word "as") name (lexeme lisp-id)]
          (return {:token :as :value name}))
        (bind [_ (word "only") value (brackets (comma-sep eisen-name))]
@@ -654,7 +747,13 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def imp-decl
-  "Parses an import declaration."
+  "Parses an import declaration
+
+   'import' identifier
+    (  'as' identifier
+     | 'only' '[' name ( ',' name )* ']'
+     | 'hide' '[' name ( ',' name )* ']'
+    )"
   (>> (word "import")
       (sep-end-by1 semi
         (bind [name identifier qualify (optional qualifier)]
@@ -662,13 +761,17 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def fwd-decl
-  "Parses a forward declaration."
+  "Parses a forward declaration.
+
+   'declare' name+"
   (bind [_ (word "declare") decls (many1 eisen-name)]
     (return {:token :fwd :decls decls})))
 
 
 (def val-decl
-  "Parses a declaration for a named value."
+  "Parses a declaration for a named value.
+
+   'val' identifier '=' expression"
   (>> (word "val")
       (sep-end-by1 semi
         (bind [name identifier  _ (sym \=) val expr]
@@ -676,7 +779,9 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def fun-decl
-  "Parses a function definition."
+  "Parses a function definition.
+
+   'fun' identifier parameter* '=' expression"
   (bind [name (>> (word "fun") identifier)
 	 parm (many id-formal)
 	 val  (>> (sym \=) expr)]

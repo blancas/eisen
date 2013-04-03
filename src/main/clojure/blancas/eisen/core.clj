@@ -48,11 +48,12 @@
    (eisen text ""))
   ([text source]
     (let [current (symbol (str *ns*))]
-      (try
-        (let [ast (parse-eisen text source)]
-          (if (:ok ast) (trans (:decls ast)) ast))
-        (finally
-          (in-ns current))))))
+      (binding [*ns* *ns*]
+        (try
+          (let [ast (parse-eisen text source)]
+            (if (:ok ast) (trans (:decls ast)) ast))
+          (finally
+            (in-ns current)))))))
 
 
 (defn eisen=
@@ -189,7 +190,7 @@
 ;; +-------------------------------------------------------------+
 
 
-(def model (atom {}))
+(def ^:dynamic model (atom {}))
 
 
 (defmacro ->m

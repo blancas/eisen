@@ -25,50 +25,45 @@
 ; functional model
 ; ----------------------------------------------------------
 
-(->m width        75
-     height       50
-     point-size   10
-     turn-millis  75
-     win-length    2
-
-     dirs { VK_LEFT  [-1  0] 
+(def width 75)
+(def height 50)
+(def point-size 10)
+(def turn-millis 75)
+(def dirs { VK_LEFT  [-1  0] 
             VK_RIGHT [ 1  0]
             VK_UP    [ 0 -1] 
-	    VK_DOWN  [ 0  1] }
+	    VK_DOWN  [ 0  1]})
 
-     body (list [1 1])
-     
-     add-points (fn [& pts] (vec (apply map + pts))))
-
-(defn color [r g b] (Color. r g b))
+(defn add-points [& pts] 
+  (vec (apply map + pts)))
 
 (defn point-to-screen-rect [pt] 
-  (map #(* (m-> point-size) %) 
+  (map #(* point-size %) 
        [(pt 0) (pt 1) 1 1]))
 
 (defn create-apple [] 
-  {:location [(rand-int (m-> width)) (rand-int (m-> height))]
-   :color (color 210 50 90)
+  {:location [(rand-int width) (rand-int height)]
+   :color (Color. 210 50 90)
    :type :apple}) 
 
 (defn create-snake []
   {:body (m-> body)
-   :dir [1 0]
+   :dir  (m-> dir)
    :type :snake
-   :color (color 15 160 70)})
+   :color (Color. 15 160 70)})
 
 (defn move [{:keys [body dir] :as snake} & grow]
-  (assoc snake :body (cons (run-> add-points (first body) dir)
+  (assoc snake :body (cons (add-points (first body) dir)
 			   (if grow body (butlast body)))))
 
 (defn turn [snake newdir] 
   (assoc snake :dir newdir))
 
 (defn win? [{body :body}]
-  (>= (count (m-> body)) (m-> win-length)))
+  (>= (count body) (m-> win-length)))
 
 (defn head-overlaps-body? [{[head & body] :body}]
-  (contains? (set (m-> body)) head))
+  (contains? (set body) head))
 
 (def lose? head-overlaps-body?)
 
@@ -99,14 +94,19 @@
 ; extensibility
 ; ----------------------------------------------------------
 
-(defn setup-eisen []
-  (init-eisen))
+(->m win-length 5
+     body       (list [1 1])
+     dir        [1 0])
 
 (defn run-eisen []
-  (let [decls (JOptionPane/showInputDialog
+  (let [code (JOptionPane/showInputDialog
 	        nil "Paste your code here:" "Change the game"
 	        JOptionPane/PLAIN_MESSAGE)]
-    (eisen decls)))
+    (when (seq code)
+      (let [result (eisen code)]
+	(when-not (:ok result)
+  	  (JOptionPane/showMessageDialog nil (:error result)))))))
+
 
 ; ----------------------------------------------------------
 ; gui
@@ -135,29 +135,29 @@
     (actionPerformed [e]
       (update-positions snake apple)
       (when (lose? @snake)
-	(reset-game snake apple)
 	(JOptionPane/showMessageDialog frame "You lose!")
-        (println (eisen "setq body [#[50,50]]")))
+	(run-eisen)
+	(reset-game snake apple))
       (when (win? @snake)
-	(reset-game snake apple)
 	(JOptionPane/showMessageDialog frame "You win!")
-        (println (eisen "setq body [#[50,50]]")))
+	(run-eisen)
+	(reset-game snake apple))  
       (.repaint this))
     (keyPressed [e]
-      (update-direction snake ((m-> dirs) (.getKeyCode e))))
+      (update-direction snake (dirs (.getKeyCode e))))
     (getPreferredSize [] 
-      (Dimension. (* (inc (m-> width)) (m-> point-size)) 
-		  (* (inc (m-> height)) (m-> point-size))))
+      (Dimension. (* (inc width) point-size) 
+		  (* (inc height) point-size)))
     (keyReleased [e])
     (keyTyped [e])))
 
 (defn game []
-  (setup-eisen)
+  (init-eisen)
   (let [snake (ref (create-snake))
 	apple (ref (create-apple))
 	frame (JFrame. "Worm")
 	panel (game-panel frame snake apple)
-	timer (Timer. (m-> turn-millis) panel)]
+	timer (Timer. turn-millis panel)]
     (doto panel
       (.setFocusable true)
       (.addKeyListener panel))
@@ -165,5 +165,7 @@
       (.add panel)
       (.pack)
       (.setVisible true))
-    (.start timer)))
-    ;[snake, apple, timer]))
+    (binding [blancas.eisen.core/model blancas.eisen.core/model]
+      (.start timer))))
+
+

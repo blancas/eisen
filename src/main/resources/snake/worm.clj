@@ -7,7 +7,7 @@
 	   (javax.swing JPanel JFrame Timer JOptionPane)
            (java.awt.event ActionListener KeyListener))
   (:use snake.import-static
-        [blancas.eisen.core :only (init-eisen eisen)]))
+        [blancas.eisen.core :only (init-eisen eisen ->m m-> run->)]))
 
 (import-static java.awt.event.KeyEvent VK_LEFT VK_RIGHT VK_UP VK_DOWN)
 
@@ -43,11 +43,11 @@
 (defn color [r g b] (Color. r g b))
 
 (defn point-to-screen-rect [pt] 
-  (map #(* point-size %) 
+  (map #(* (m-> point-size) %) 
        [(pt 0) (pt 1) 1 1]))
 
 (defn create-apple [] 
-  {:location [(rand-int width) (rand-int height)]
+  {:location [(rand-int (m-> width)) (rand-int (m-> height))]
    :color (color 210 50 90)
    :type :apple}) 
 
@@ -58,14 +58,14 @@
    :color (color 15 160 70)})
 
 (defn move [{:keys [body dir] :as snake} & grow]
-  (assoc snake :body (cons (run-> add-points (first body) dir) 
-			   (if grow (m-> body) (butlast (m-> body))))))
+  (assoc snake :body (cons (run-> add-points (first body) dir)
+			   (if grow body (butlast body)))))
 
 (defn turn [snake newdir] 
   (assoc snake :dir newdir))
 
 (defn win? [{body :body}]
-  (>= (count (m-> body)) win-length))
+  (>= (count (m-> body)) (m-> win-length)))
 
 (defn head-overlaps-body? [{[head & body] :body}]
   (contains? (set (m-> body)) head))
@@ -137,19 +137,17 @@
       (when (lose? @snake)
 	(reset-game snake apple)
 	(JOptionPane/showMessageDialog frame "You lose!")
-        (println (eisen "setq body [#[50,50]]"))
-	(println body))
+        (println (eisen "setq body [#[50,50]]")))
       (when (win? @snake)
 	(reset-game snake apple)
 	(JOptionPane/showMessageDialog frame "You win!")
-        (println (eisen "setq body [#[50,50]]"))
-	(println body))
+        (println (eisen "setq body [#[50,50]]")))
       (.repaint this))
     (keyPressed [e]
-      (update-direction snake (dirs (.getKeyCode e))))
+      (update-direction snake ((m-> dirs) (.getKeyCode e))))
     (getPreferredSize [] 
-      (Dimension. (* (inc width) point-size) 
-		  (* (inc height) point-size)))
+      (Dimension. (* (inc (m-> width)) (m-> point-size)) 
+		  (* (inc (m-> height)) (m-> point-size))))
     (keyReleased [e])
     (keyTyped [e])))
 
@@ -159,7 +157,7 @@
 	apple (ref (create-apple))
 	frame (JFrame. "Worm")
 	panel (game-panel frame snake apple)
-	timer (Timer. turn-millis panel)]
+	timer (Timer. (m-> turn-millis) panel)]
     (doto panel
       (.setFocusable true)
       (.addKeyListener panel))
@@ -167,5 +165,5 @@
       (.add panel)
       (.pack)
       (.setVisible true))
-    (.start timer)
-    [snake, apple, timer]))
+    (.start timer)))
+    ;[snake, apple, timer]))

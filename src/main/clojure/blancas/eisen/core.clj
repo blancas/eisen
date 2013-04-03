@@ -218,7 +218,7 @@
   "If the name has a value in the host model it gets called along
    with any other supplied arguments."
   [name & more]
-  `(if (m-> ~name) (apply (m-> ~name) ~more)))
+  `(if (m-> ~name) ((m-> ~name) ~@more)))
 
 
 (defmacro host-name
@@ -266,8 +266,6 @@
        * io!
        * locking
        * loop
-       * setq
-       * setv
        * sync
        * when
        * whenFirst

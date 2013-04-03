@@ -193,7 +193,7 @@
 (def ^:dynamic model (atom {}))
 
 
-(defmacro ->m
+(defmacro host-model
   "Puts on or more key value pairs into the model. A key must be
    an unquoted symbol; a value may be any Clojure object."
   [& args]
@@ -208,18 +208,26 @@
 			     ~@(clojure.core/apply concat pairs))))))
 
 
-(defmacro m->
+(defmacro with-host-model
+  "Evaluates the body, binding the host model. Use this macro
+   when Eisen code will run in a thread other than the main one."
+  [& forms]
+  `(clojure.core/binding [blancas.eisen.core/model blancas.eisen.core/model]
+     ~@forms))
+
+
+(defmacro fetch
   "Looks up a key in the model and returns its value.
    A key must be an unquoted symbol."
   [k] `(clojure.core/get @blancas.eisen.core/model
 			 '~(clojure.core/symbol (clojure.core/name k))))
 
 
-(defmacro run->
+(defmacro call
   "If the name has a value in the host model it gets called along
    with any other supplied arguments."
   [name & more]
-  `(if (m-> ~name) ((m-> ~name) ~@more)))
+  `(if (fetch ~name) ((fetch ~name) ~@more)))
 
 
 (defmacro host-name

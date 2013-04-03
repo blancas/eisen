@@ -140,7 +140,9 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def identifier
-  "Parses an identifier, checking for additional reserved words."
+  "Parses an identifier, checking for additional reserved words.
+   This parser expands the basic one in order to check for
+   reserved words entered by language extensions."
   (<:> (bind [pos get-position val (:identifier rec)]
          (if (contains? @reserved val)
 	   (fail (fmt :reserved val))
@@ -157,13 +159,14 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def id-formal
-  "Parses an identifier as a formal parameter."
+  "Parses an identifier as a formal parameter. This means that
+   it will be translated as a symbol."
   (bind [pos get-position id (<|> (word "_") identifier)]
     (return (assoc id :token :id-formal))))
 
 
 (def lisp-id
-  "Parses a lisp id with extra characters."
+  "Parses a lisp id with extra characters, as allowed by Clojure."
   (let [fst (<|> letter (one-of* "!$*-_+=<>?|"))
         rst (<|> fst digit (one-of* ":'./"))]
     (<+> fst (many rst))))
@@ -325,22 +328,22 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def band-op
-  "Operator bitwise and."
+  "Operator & denotes bitwise and."
   (<:> (>> (sym* \&) (not-followed-by (sym* \&)) trim (lexer (return "bit-and")))))
 
 
 (def bxor-op
-  "Opertor bitwise xor."
+  "Opertor ^ denotes bitwise xor."
   (>> (sym \^) (lexer (return "bit-xor"))))
 
 
 (def bor-op
-  "Opertor bitwise or."
+  "Opertor | denotes bitwise or."
   (<:> (>> (sym* \|) (not-followed-by (sym* \|)) trim (lexer (return "bit-or")))))
 
 
 (def rel-op
-  "Relational operators."
+  "Relational operators: >=, <=, >, <."
   (token ">=" "<=" ">" "<"))
 
 
@@ -351,12 +354,12 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def and-op
-  "Operator logical and."
+  "Operator && denotes logical and."
   (>> (token "&&") (lexer (return "and"))))
 
 
 (def or-op
-  "Operator logical or."
+  "Operator || denotes logical or."
   (>> (token "||") (lexer (return "or"))))
 
 
@@ -369,7 +372,7 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def list-lit
-  "Parses a list literal."
+  "Parses a list literal: [expr,expr, ...]."
   (<:> (bind [pos get-position
 	      val (brackets (comma-sep expr))]
          (return {:token :list-lit :value val :pos pos}))))
@@ -384,7 +387,7 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def vector-lit
-  "Parses a vector literal."
+  "Parses a vector literal: #[expr, expr, ...]."
   (<:> (bind [pos get-position
 	      val (>> (sym* \#)
 		      (brackets (comma-sep expr)))]
@@ -409,7 +412,7 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def set-lit
-  "Parses a set literal."
+  "Parses a set literal: #{ expr, expr, ... }."
   (<:> (bind [pos get-position
 	      val (>> (sym* \#)
 		      (braces (comma-sep expr)))]
@@ -417,7 +420,7 @@ Literal values follow the rules of Java and Clojure."
 
 
 (def map-lit
-  "Parses a map literal."
+  "Parses a map literal: { key val, ... }."
   (bind [pos get-position
 	 val (braces (comma-sep (<*> expr expr)))]
     (return {:token :map-lit :value (flatten val) :pos pos})))

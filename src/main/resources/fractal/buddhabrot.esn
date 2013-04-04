@@ -1,0 +1,84 @@
+module buddhabrot
+
+(* Adds two complex numbers. *)
+
+fun add c1 c2 =  map `+` c1 c2
+
+
+(* Multiplies two complex numbers. *)
+
+fun mult c1 c2 =
+  let ra = first c1;
+      ia = second c1;
+      rb = first c2;
+      ib = second c2
+  in
+      #[ ra * rb - ia * ib, ra * ib + ia * rb ]
+  end
+
+
+(* Absolute value of a complex number. *)
+
+fun abs complex =
+  let real = first complex;
+      imag = second complex
+  in
+      _sqrt (real * real + imag * image)
+  end
+
+
+(* Compute a point's path. *)
+
+fun calcPath x y max =
+  let c = #[x, y]
+  in
+      loop z    = c;
+           path = #[];
+           iter = 0;
+      in
+           if iter > max then #[]
+           else
+             if abs z > 2.0 then z : path
+             else recur (add c (mult z z)) (z : path) (inc iter)
+
+
+(* Translate a point into a screen coordinate. *)
+
+fun point2coord size c =
+  let real = first c;
+      imag = second c
+  in
+      #[ int (0.3 * size * (real + 0.5) + size \ 2), 
+         int (0.3 * size * image + size \ 2) ]
+  end
+
+
+(* Sets a point into the fractal's buffer. *)
+
+fun bufferSet fractal point =
+  let size   = get fractal :size;
+      buffer = get fractal :buffer
+  in
+      if x > 0 && y > 0 && x < size && y < size then
+         `asset-int` buffer y x (aget buffer y x  + 1)
+  end
+
+
+(* Generates the fractal image. *)
+
+fun generate fractal =
+  let buffer = get fractal :buffer;
+      iter   = get fractal :iteration
+  in
+      doseq [point <- iterate inc 1]
+          let x    = rand 6 - 3;
+              y    = rand 6 - 3;
+              path = calcPath x y iter
+          in
+              if mod point 1000000 == 0 then
+                 println "Point:" point;
+
+              doseq [p path] bufferSet fractal p end
+          end
+      end
+  end

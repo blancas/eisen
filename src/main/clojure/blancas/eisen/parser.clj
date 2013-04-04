@@ -152,9 +152,9 @@ Literal values follow the rules of Java and Clojure."
 (def key-name
   "Parses a Clojure keyword."
   (bind [pos get-position
-	 key (<$> keyword
-	          (>> (sym* \:)
-		      (<+> (lexeme (many1 (none-of* " `~@%^*()[]{};\"\\,"))))))]
+	 key (<:> (<$> keyword
+	               (>> (sym* \:)
+		           (<+> (lexeme (many1 (none-of* " `~@%^*()[]{};\"\\,")))))))]
     (return {:token :keyword :value key :pos pos})))
 
 

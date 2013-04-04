@@ -27,7 +27,7 @@ fun abs complex =
   end
 
 
-(* Compute a point's path. *)
+(* Computes a point's path. *)
 
 fun calcPath x y max =
   let c = #[x, y]
@@ -44,7 +44,7 @@ fun calcPath x y max =
   end
 
 
-(* Translate a point into a screen coordinate. *)
+(* Translates a point into a screen coordinate. *)
 
 fun point2coord size c =
   let real = first c;

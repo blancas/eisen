@@ -1,3 +1,6 @@
+-- Original work by Nurullah Akkaya
+-- http://nakkaya.com/2009/10/04/fractals-in-clojure-buddhabrot-fractal/
+
 module buddhabrot
 
 (* Adds two complex numbers. *)
@@ -40,7 +43,7 @@ fun calcPath x y max =
            else
              if abs z > 2.0 then z : path
              else recur (add c (mult z z)) (z : path) (inc iter)
-      end;
+      end
   end
 
 

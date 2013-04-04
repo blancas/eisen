@@ -201,7 +201,7 @@
   (let [n (count args)]
     (when (pos? n)
       (when (odd? n)
-	(throw (Exception. "Macro ->m takes an even number of arguments")))
+	(throw (Exception. "Macro host-model takes an even number of arguments")))
       (let [pairs (for [[k v] (partition 2 args)]
 		    `('~(clojure.core/symbol (clojure.core/name k)) ~v))]
         `(clojure.core/swap! model clojure.core/assoc

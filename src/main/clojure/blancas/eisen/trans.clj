@@ -96,8 +96,15 @@
   "Encodes a reference to a host data element."
   (let [letters (drop-while #(= % \_) name)
 	sym-name (symbol (clojure.string/join letters))]
-    `(let [v# (blancas.eisen.core/m-> ~sym-name)]
+    `(let [v# (blancas.eisen.core/fetch ~sym-name)]
        (if (fn? v#) (v#) v#))))
+
+
+(defn host-func [name]
+  "Encodes a reference to a host function."
+  (let [letters (drop-while #(= % \_) name)
+	sym-name (symbol (clojure.string/join letters))]
+    `(blancas.eisen.core/fetch ~sym-name)))
 
 
 ;; +-------------------------------------------------------------+
@@ -200,13 +207,15 @@
 	sym-name (symbol value)]
     (monad [env get-se
 	    lst (trans-exprs args)]
-      (if (contains? env sym-name)
-        (->right (list* sym-name lst))
-	(if-let [var-inst (resolve sym-name)]
-          (if (function? var-inst)
-	    (->right (list* sym-name lst))
-	    (->left (error pos "%s is not a function" value)))
-          (->left (error pos "undeclared identifier: %s" value)))))))
+      (if (.startsWith value "_")
+        (->right `(~(host-func value) ~@lst))
+        (if (contains? env sym-name)
+          (->right (list* sym-name lst))
+	  (if-let [var-inst (resolve sym-name)]
+            (if (function? var-inst)
+	      (->right (list* sym-name lst))
+	      (->left (error pos "%s is not a function" value)))
+            (->left (error pos "undeclared identifier: %s" value))))))))
 
 
 (defn trans-macrocall
@@ -345,7 +354,7 @@
   [{:keys [name value]}]
   (monad [source (trans-expr value)]
     (if @using-model
-      (->right `(blancas.eisen.core/->m ~(symbol name) ~source))
+      (->right `(blancas.eisen.core/host-model ~(symbol name) ~source))
       (->right `(alter-var-root (var ~(symbol name)) (constantly ~source))))))
 
 
@@ -353,7 +362,7 @@
   "Translates a setv statement."
   [{:keys [name value]}]
   (if @using-model
-    (->right `(blancas.eisen.core/->m ~(symbol name) ~(symbol value)))
+    (->right `(blancas.eisen.core/host-model ~(symbol name) ~(symbol value)))
     (->right `(alter-var-root (var ~(symbol name))
 			      (constantly ~(symbol value))))))
 

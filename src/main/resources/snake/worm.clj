@@ -1,6 +1,6 @@
 ;; Taken from:
 ;; Programming Clojure, 2nd Ed.
-;; Halloway and Bedra.
+;; By Stuart Halloway and Aaron Bedra.
 
 (ns snake.worm
   (:import (java.awt Color Dimension) 
@@ -15,6 +15,7 @@
 ; ----------------------------------------------------------
 ; To run:
 ; ----------------------------------------------------------
+
 (comment
   (load "snake/worm")
   (ns snake.worm)
@@ -22,11 +23,32 @@
 )
 
 ; ----------------------------------------------------------
+; extensibility
+; ----------------------------------------------------------
+
+(host-model
+  width       75
+  height      50
+  win-length   2
+  point-size  10
+  body        (list [1 1])
+  dir         [1 0]
+  add-points  (fn [& pts] (vec (apply map + pts))))
+
+(defn run-eisen []
+  (let [code (JOptionPane/showInputDialog
+	        nil "Paste your code here:" "Change the game"
+	        JOptionPane/PLAIN_MESSAGE)]
+    (when (seq code)
+      (let [result (eisen code)]
+	(when-not (:ok result)
+  	  (JOptionPane/showMessageDialog nil (:error result)))))))
+
+
+; ----------------------------------------------------------
 ; functional model
 ; ----------------------------------------------------------
 
-(def width 75)
-(def height 50)
 (def turn-millis 75)
 (def dirs { VK_LEFT  [-1  0] 
             VK_RIGHT [ 1  0]
@@ -38,7 +60,7 @@
        [(pt 0) (pt 1) 1 1]))
 
 (defn create-apple [] 
-  {:location [(rand-int width) (rand-int height)]
+  {:location [(rand-int (fetch width)) (rand-int (fetch height))]
    :color (Color. 210 50 90)
    :type :apple}) 
 
@@ -87,27 +109,6 @@
   nil)
 
 ; ----------------------------------------------------------
-; extensibility
-; ----------------------------------------------------------
-
-(host-model
-  win-length   5
-  point-size  10
-  body        (list [1 1])
-  dir         [1 0]
-  add-points  (fn [& pts] (vec (apply map + pts))))
-
-(defn run-eisen []
-  (let [code (JOptionPane/showInputDialog
-	        nil "Paste your code here:" "Change the game"
-	        JOptionPane/PLAIN_MESSAGE)]
-    (when (seq code)
-      (let [result (eisen code)]
-	(when-not (:ok result)
-  	  (JOptionPane/showMessageDialog nil (:error result)))))))
-
-
-; ----------------------------------------------------------
 ; gui
 ; ----------------------------------------------------------
 
@@ -145,8 +146,8 @@
     (keyPressed [e]
       (update-direction snake (dirs (.getKeyCode e))))
     (getPreferredSize [] 
-      (Dimension. (* (inc width) (fetch point-size)) 
-		  (* (inc height) (fetch point-size))))
+      (Dimension. (* (inc (fetch width)) (fetch point-size)) 
+		  (* (inc (fetch height)) (fetch point-size))))
     (keyReleased [e])
     (keyTyped [e])))
 

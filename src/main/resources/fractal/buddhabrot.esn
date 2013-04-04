@@ -11,7 +11,7 @@ fun mult c1 c2 =
   let ra = first c1;
       ia = second c1;
       rb = first c2;
-      ib = second c2
+      ib = second c2;
   in
       #[ ra * rb - ia * ib, ra * ib + ia * rb ]
   end
@@ -21,9 +21,9 @@ fun mult c1 c2 =
 
 fun abs complex =
   let real = first complex;
-      imag = second complex
+      imag = second complex;
   in
-      _sqrt (real * real + imag * image)
+      _sqrt (real * real + imag * imag);
   end
 
 
@@ -38,18 +38,20 @@ fun calcPath x y max =
       in
            if iter > max then #[]
            else
-             if abs z > 2.0 then z : path
+             if abs z > 2.0 then (z : path)
              else recur (add c (mult z z)) (z : path) (inc iter)
+      end;
+  end
 
 
 (* Translate a point into a screen coordinate. *)
 
 fun point2coord size c =
   let real = first c;
-      imag = second c
+      imag = second c;
   in
-      #[ int (0.3 * size * (real + 0.5) + size \ 2), 
-         int (0.3 * size * image + size \ 2) ]
+      #[ int (0.3 * size * (real + 0.5) + size / 2), 
+         int (0.3 * size * imag + size / 2) ]
   end
 
 
@@ -57,28 +59,35 @@ fun point2coord size c =
 
 fun bufferSet fractal point =
   let size   = get fractal :size;
-      buffer = get fractal :buffer
+      buffer = get fractal :buffer;
+      p      = point2coord size point;
+      x      = first p;
+      y      = second p;
   in
       if x > 0 && y > 0 && x < size && y < size then
-         `asset-int` buffer y x (aget buffer y x  + 1)
+         `aset-int` buffer y x (aget buffer y x  + 1)
   end
 
 
 (* Generates the fractal image. *)
 
-fun generate fractal =
+fun compute fractal =
   let buffer = get fractal :buffer;
-      iter   = get fractal :iteration
+      iter   = get fractal :iteration;
   in
       doseq [point <- iterate inc 1]
           let x    = rand 6 - 3;
               y    = rand 6 - 3;
-              path = calcPath x y iter
+              path = calcPath x y iter;
           in
               if mod point 1000000 == 0 then
                  println "Point:" point;
 
-              doseq [p path] bufferSet fractal p end
+              doseq [p <- path] bufferSet fractal p end
           end
       end
   end
+
+(* Installs the local function. *)
+
+setv generate = compute

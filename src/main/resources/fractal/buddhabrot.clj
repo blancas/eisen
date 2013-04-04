@@ -1,14 +1,34 @@
+;; Original work by Nurullah Akkaya
+;; http://nakkaya.com/2009/10/04/fractals-in-clojure-buddhabrot-fractal/
+;;
 (ns fractal.buddhabrot
   (:import (javax.swing JFrame JLabel)
            (java.awt Graphics Dimension Color)
            (java.awt.image BufferedImage))
-  (use [blancas.eisen.core :only (init-eisen host-model call)]))
+  (use [blancas.eisen.core :only (init-eisen eisenf host-model call)]))
+
+;; To get the fractal computation started:
+(comment
+  (load "fractal/buddhabrot")
+  (ns fractal.buddhabrot)
+  (def fractal {:buffer (make-array Integer/TYPE 800 800) :size 800 :iteration 50})
+  (start fractal)
+)
+
+;; To draw the fractal at intervals during the computation:
+(comment
+  (draw fractal)
+)
+
+;; Host data model for setting up the computation from user code.
 
 (def user-code "src/main/resources/fractal/buddhabrot.esn")
 
 (host-model
-  sqrt     #(java.lang.Math %)  ;; Package Java interop for user code.
-  generate identity)            ;; Generation function to be replaced.
+  sqrt     #(java.lang.Math/sqrt %)  ;; Package Java interop for user code.
+  generate identity)                 ;; Generation function to be replaced.
+
+;; Start the computation using user code.
 
 (defn start [fractal]
   (init-eisen)
@@ -32,6 +52,8 @@
 
       (.setColor graphics (calc-pixel-color (aget buffer y x) biggest))
       (.drawLine graphics x y x y))))
+
+;; Draws the fractal.
 
 (defn draw [{buffer :buffer size :size}]
   (let [image  (BufferedImage. size size BufferedImage/TYPE_INT_RGB)

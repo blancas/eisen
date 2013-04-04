@@ -152,10 +152,9 @@ Literal values follow the rules of Java and Clojure."
 (def key-name
   "Parses a Clojure keyword."
   (bind [pos get-position
-	 key (<:> (<$> keyword
-	               (>> (sym* \:)
-		           (<+> (lexeme (many1 (none-of* " `~@%^*()[]{};\"\\,")))))))]
-    (return {:token :keyword :value key :pos pos})))
+	 key (<:> (>> (sym* \:)
+		      (<+> (lexeme (many1 (none-of* " `~@%^*()[]{};\"\\,\n\t\r"))))))]
+    (return {:token :keyword :value (keyword key) :pos pos})))
 
 
 (def id-formal
@@ -450,6 +449,7 @@ Literal values follow the rules of Java and Clojure."
    in a pattern-matching expression.
 
    Either one of:
+   * Keyword
    * Character
    * String
    * Decimal number
@@ -482,6 +482,7 @@ Literal values follow the rules of Java and Clojure."
    directly, but only through an expression in parenthesis.
 
    Either one of:
+   * Keyword
    * Character
    * String
    * Decimal number
@@ -538,6 +539,7 @@ Literal values follow the rules of Java and Clojure."
   "A factor is an operand within an expression.
 
    Either one of:
+   * Keyword
    * Character
    * String
    * Decimal number

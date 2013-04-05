@@ -41,11 +41,11 @@ Maven:
 
 ## Sample Usage
 
-The following sections show parts of two samples to highlight some Eisen features.
+The following sections show parts of two samples in order to highlight some of Eisen features.
 
 ### The Sname Game
  
-The [Snake](https://github.com/blancas/eisen/wiki/Extending-the-Snake-Game-Interactively) sample is a modified version of the game in Programming Clojure that may be changed and extended. The host program declares a mutable model for the user code to read and change.
+The [Snake](https://github.com/blancas/eisen/wiki/Extending-the-Snake-Game-Interactively) sample is a modified version of the game in the book *Programming Clojure* that may be changed and extended. The host program declares a mutable model for the user code to read and change.
 
 ```clojure
 (host-model
@@ -60,7 +60,7 @@ The [Snake](https://github.com/blancas/eisen/wiki/Extending-the-Snake-Game-Inter
 
 The game reads the user code pasted on a simple text field and evaluates it.
 
-```
+```clojure
 (defn run-eisen []
   (let [code (JOptionPane/showInputDialog
 	        nil "Paste your code here:" "Change the game"

@@ -19,7 +19,7 @@ The Eisen library offers the following facilities:
 * Functions for parsing and running Eisen code at the Clojure REPL.
 * A simple Eisen REPL.
 * The compiler's parsing and translation functions.
-* Compiler hooks for extending Eisen or writing DSL's.
+* Compiler hooks for extending Eisen or writing DSLs.
 
 ## Setup
 
@@ -43,7 +43,7 @@ Maven:
 
 The following sections show parts of two samples in order to highlight some of Eisen's features.
 
-### The Sname Game
+### The Snake Game
  
 The [Snake](https://github.com/blancas/eisen/wiki/Extending-the-Snake-Game-Interactively) sample is a modified version of the game in the book *Programming Clojure* that may be changed and extended. The host program declares a mutable model for the user code to read and change.
 

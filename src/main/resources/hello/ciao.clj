@@ -9,9 +9,10 @@
 (def eisen-file "src/main/resources/hello/ciao.esn")
 
 ;; The host model
-(->m greeting "Hello, %s!\n"  ;; Default form of the greeting.
-     subject  "world"         ;; Default receiver of the greeting.
-     hook     nil)            ;; Something to do before the greeting.
+(host-model
+  greeting "Hello, %s!\n"  ;; Default form of the greeting.
+  subject  "world"         ;; Default receiver of the greeting.
+  hook     nil)            ;; Something to do before the greeting.
 
 (defn greet
   "Greets someone or something."
@@ -23,5 +24,5 @@
 
 ;; Main program.
 
-(run-> hook)                          ;; Run user-defined code.
-(greet (m-> greeting) (m-> subject))  ;; Greets the subject.
+(call hook)                               ;; Run user-defined code.
+(greet (fetch greeting) (fetch subject))  ;; Greets the subject.

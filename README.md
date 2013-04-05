@@ -62,9 +62,9 @@ The game reads the user code pasted on a simple text field and evaluates it.
 
 ```clojure
 (defn run-eisen []
-  (let [code (JOptionPane/showInputDialog
-	        nil "Paste your code here:" "Change the game"
-	        JOptionPane/PLAIN_MESSAGE)]
+  (let [code (JOptionPane/showInputDialog nil
+               "Paste your code here:" "Change the game"
+               JOptionPane/PLAIN_MESSAGE)]
     (when (seq code)
       (let [result (eisen code)]
         (when-not (:ok result)
@@ -113,7 +113,7 @@ The main program defines the model shared with the user code. Function `start` w
   (future (call generate fractal)))
 ```
 
-These are some of the functions. (Note that destructuring is not currently supported.)
+These are some of the functions that compute the fractal. (Note that destructuring is not currently supported.)
 
 ```sml
 (* Computes a point's path. *)

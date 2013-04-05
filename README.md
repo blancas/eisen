@@ -179,6 +179,13 @@ fun compute fractal =
 setv generate = compute
 ```
 
+## To Do
+
+* Destructuring.
+* Pattern matching.
+* A uniform mechanism for function calls.
+* Peephole optimizations.
+
 ## Documentation
 
 Eisen is documented in the [Wiki](https://github.com/blancas/eisen/wiki).

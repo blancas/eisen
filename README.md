@@ -41,7 +41,7 @@ Maven:
 
 ## Sample Usage
 
-The following sections show parts of two samples in order to highlight some of Eisen features.
+The following sections show parts of two samples in order to highlight some of Eisen's features.
 
 ### The Sname Game
  
@@ -67,8 +67,8 @@ The game reads the user code pasted on a simple text field and evaluates it.
 	        JOptionPane/PLAIN_MESSAGE)]
     (when (seq code)
       (let [result (eisen code)]
-	(when-not (:ok result)
-  	  (JOptionPane/showMessageDialog nil (:error result)))))))
+        (when-not (:ok result)
+          (JOptionPane/showMessageDialog nil (:error result)))))))
 ```
 
 On the Eisen side, this code makes the snake wrap around the borders.
@@ -184,6 +184,10 @@ setv generate = compute
 Eisen is documented in the [Wiki](https://github.com/blancas/eisen/wiki).
 
 Browse the Codox [Eisen v0.1.0 API](http://blancas.github.com/eisen).
+
+To generate the API docs (in the `codox` directory):
+
+    lein doc
 
 ## License
 

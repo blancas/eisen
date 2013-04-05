@@ -83,7 +83,7 @@ fun compute fractal =
               y    = rand 6 - 3;
               path = calcPath x y iter;
           in
-              if mod point 1000000 == 0 then
+              if point % 1000000 == 0 then
                  println "Point:" point;
 
               doseq [p <- path] bufferSet fractal p end

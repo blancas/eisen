@@ -24,5 +24,5 @@
 
 ;; Main program.
 
-(call hook)                               ;; Run user-defined code.
+(call hook)                               ;; Calls the user-defined function.
 (greet (fetch greeting) (fetch subject))  ;; Greets the subject.

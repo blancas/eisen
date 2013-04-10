@@ -5,7 +5,7 @@
   <groupId>org.blancas</groupId>
   <artifactId>eisen</artifactId>
   <packaging>jar</packaging>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
   <name>Eisen</name>
   <description>A Language for Programmable Applications</description>
 
@@ -80,7 +80,7 @@
     <dependency>
       <groupId>criterium</groupId>
       <artifactId>criterium</artifactId>
-      <version>0.2.1</version>
+      <version>0.3.1</version>
     </dependency>
     <dependency>
       <groupId>org.clojure</groupId>

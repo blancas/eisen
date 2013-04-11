@@ -75,7 +75,8 @@ Literal values follow the rules of Java and Clojure."
    		        if then else let letrec in do end
    case-sensitive       Yes
    line-continuation    Backslash
-   trim-newline         Yes"
+   trim-newline         Yes
+   leading-sign         No"
   (assoc lex/basic-def
     :comment-start       "(*"
     :comment-end         "*)"
@@ -84,7 +85,8 @@ Literal values follow the rules of Java and Clojure."
     :identifier-start   (<|> lower (sym* \_))
     :identifier-letter  (<|> alpha-num (one-of* "_'?!./"))
     :reserved-names     ["module" "import" "declare" "val" "fun" "fn" "_" "if"
-			 "then" "else" "let" "letrec" "in" "do" "end" "setq" "setv"]))
+			 "then" "else" "let" "letrec" "in" "do" "end" "setq" "setv"]
+    :leading-sign       false))
 
 
 (def rec (lex/make-parsers eisen-style))
@@ -203,72 +205,28 @@ Literal values follow the rules of Java and Clojure."
     (return {:token :sym-arg :value (:value val) :pos pos})))
 
 
-;; +-------------------------------------------------------------+
-;; |                  Custom Numeric Parsers.                    |
-;; |                                                             |
-;; | Leading signs are not allowed to avoid conflict with the    |
-;; | addition and subtraction operators.                         |
-;; +-------------------------------------------------------------+
-
-
-(def sign (optional (one-of* "+-")))
-
-(def int-suffix (<|> (<< (sym* \N) (not-followed-by letter))
-		     (not-followed-by (<|> letter (sym* \.)))))
-
-(def float-suffix (<< (optional (sym* \M)) (not-followed-by letter)))
-
-
-(def custom-dec-lit
-  (<?> (>>= (<:> (lexeme (<+> (many1 digit) int-suffix)))
-            (fn [x] (return (read-string x))))
-       (i18n :dec-lit)))
-	
-
-(def custom-oct-lit
-  (<?> (>>= (<:> (lexeme (<+> (sym* \0) (many oct-digit) int-suffix)))
-            (fn [x] (return (read-string x))))
-       (i18n :oct-lit)))
-
-
-(def custom-hex-lit
-  (<?> (>>= (<:> (lexeme (<+> (token- "0x") (many1 hex-digit) int-suffix)))
-            (fn [x] (return (read-string x))))
-       (i18n :hex-lit)))
-
-
-(def custom-flt-lit
-  (<?> (>>= (<:> (lexeme
-		   (<+> (many1 digit)
-	                (option ".0" (<*> (sym* \.) (many1 digit)))
-	                (optional (<*> (one-of* "eE") sign (many1 digit)))
-			float-suffix)))
-            (fn [x] (return (read-string x))))
-       (i18n :float-lit)))
-
-
 (def dec-lit*
   "Parses a decimal literal, with no leading sign."
-  (bind [pos get-position val custom-dec-lit]
-    (return {:token :dec-lit :value val :pos pos})))
+  (bind [pos get-position val dec-lit]
+    (return {:token :dec-lit :value (:value val) :pos pos})))
 
 
 (def oct-lit*
   "Parses an octal literal, with no leading sign."
-  (bind [pos get-position val custom-oct-lit]
-    (return {:token :oct-lit :value val :pos pos})))
+  (bind [pos get-position val oct-lit]
+    (return {:token :oct-lit :value (:value val) :pos pos})))
 
 
 (def hex-lit*
   "Parses a hex literal, with no leading sign."
-  (bind [pos get-position val custom-hex-lit]
-    (return {:token :hex-lit :value val :pos pos})))
+  (bind [pos get-position val hex-lit]
+    (return {:token :hex-lit :value (:value val) :pos pos})))
 
 
 (def flt-lit*
   "Parses a floating-point literal, with no leading sign."
-  (bind [pos get-position val custom-flt-lit]
-    (return {:token :float-lit :value val :pos pos})))
+  (bind [pos get-position val float-lit]
+    (return {:token :float-lit :value (:value val) :pos pos})))
 
 
 ;; +-------------------------------------------------------------+

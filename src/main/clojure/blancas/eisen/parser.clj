@@ -734,7 +734,8 @@ Literal values follow the rules of Java and Clojure."
 (def val-decl
   "Parses a declaration for a named value.
 
-   'val' identifier '=' expression"
+   'val' identifier '=' expression ( ';' )+
+   ( identifier '=' expression ( ';' )+ )*"
   (>> (word "val")
       (sep-end-by1 semi
         (bind [name identifier  _ (sym \=) val expr]

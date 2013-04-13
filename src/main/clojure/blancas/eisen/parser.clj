@@ -690,7 +690,7 @@ Literal values follow the rules of Java and Clojure."
   "Parses a module declaration.
 
    import name[.name]*"
-  (bind [_ (word "module") name (lexeme lisp-id)]
+  (bind [name (>> (word "module") (lexeme lisp-id))]
     (return {:token :mod :name name})))
 
 
@@ -701,11 +701,11 @@ Literal values follow the rules of Java and Clojure."
     | 'only' '[' name ( ',' name )* ']'
     | 'hide' '[' name ( ',' name )* ']'
    )"
-  (<|> (bind [_ (word "as") name (lexeme lisp-id)]
+  (<|> (bind [name (>> (word "as") (lexeme lisp-id))]
          (return {:token :as :value name}))
-       (bind [_ (word "only") value (brackets (comma-sep eisen-name))]
+       (bind [value (>> (word "only") (brackets (comma-sep eisen-name)))]
          (return {:token :only :value value}))
-       (bind [_ (word "hide") value (brackets (comma-sep eisen-name))]
+       (bind [value (>> (word "hide") (brackets (comma-sep eisen-name)))]
 	 (return {:token :hide :value value}))))
 
 
@@ -727,7 +727,7 @@ Literal values follow the rules of Java and Clojure."
   "Parses a forward declaration.
 
    'declare' name+"
-  (bind [_ (word "declare") decls (many1 eisen-name)]
+  (bind [decls (>> (word "declare") (many1 eisen-name))]
     (return {:token :fwd :decls decls})))
 
 

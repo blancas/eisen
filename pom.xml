@@ -64,7 +64,7 @@
     <dependency>
       <groupId>org.blancas</groupId>
       <artifactId>morph</artifactId>
-      <version>0.2.0</version>
+      <version>0.3.0</version>
     </dependency>
     <dependency>
       <groupId>jline</groupId>

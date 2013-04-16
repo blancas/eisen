@@ -483,7 +483,7 @@
    :decls  if ok, a vector of Clojure forms
    :error  if not ok, the error or warning message"
   [coll]
-  (let [job (monad [v (seqm (map eval-ast coll))] (->right v))]
+  (let [job (seqm (map eval-ast coll))]
     (either [res (run-se job predefs)]
       {:ok false :error res}
       {:ok true :decls (map first res) :value (-> res last second)})))

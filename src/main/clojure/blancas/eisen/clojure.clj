@@ -84,10 +84,10 @@
   "Translates a loop expression."
   [{:keys [decls exprs]}]
   (let [env (map (comp symbol :name) decls)]
-    (monad [_     (modify-se into env)
+    (monad [_     (modify-se push env)
 	    decls (trans-bindings decls)
             exprs (trans-exprs exprs)
-	    _     (modify-se difference env)]
+	    _     (modify-se pop)]
       (->right `(loop [~@(apply concat decls)] ~@exprs)))))
 
 
@@ -112,10 +112,10 @@
   "Translates a when-first expression."
   [{:keys [name coll body]}]
   (monad [symbol (trans-expr name)
-	  _      (modify-se conj symbol)
+	  _      (modify-se push [symbol])
 	  source (trans-expr coll)
           body   (trans-expr body)
-	  _      (modify-se difference [symbol])]
+	  _      (modify-se pop)]
     (->right `(clojure.core/when-first [~symbol ~source] ~@body))))
 
 
@@ -240,11 +240,11 @@
   "Translates a for expression."
   [{:keys [colls preds body]}]
   (let [env (map (comp symbol :name) colls)]
-    (monad [_    (modify-se into env)
+    (monad [_    (modify-se push env)
 	    coll (trans-bindings colls) 
 	    pred (trans-predicates preds)
             body (trans-expr body)
-	    _    (modify-se difference env)]
+	    _    (modify-se pop)]
       (let [decls (concat coll pred)]
         (->right `(clojure.core/for [~@(apply concat decls)] ~body))))))
 
@@ -275,11 +275,11 @@
   "Translates a doseq expression."
   [{:keys [colls preds exprs]}]
   (let [env (map (comp symbol :name) colls)]
-    (monad [_    (modify-se into env)
+    (monad [_    (modify-se push env)
 	    coll (trans-bindings colls) 
 	    pred (trans-predicates preds)
             body (trans-exprs exprs)
-	    _    (modify-se difference env)]
+	    _    (modify-se pop)]
       (let [decls (concat coll pred)]
         (->right `(clojure.core/doseq [~@(apply concat decls)] ~@body))))))
 
@@ -304,10 +304,10 @@
   "Translates a with-open expression."
   [{:keys [decls body]}]
   (let [env (map (comp symbol :name) decls)]
-    (monad [_     (modify-se into env)
+    (monad [_     (modify-se push env)
 	    decls (trans-bindings decls)
             exprs (trans-expr body)
-	    _     (modify-se difference env)]
+	    _     (modify-se pop)]
       (->right `(with-open [~@(apply concat decls)] ~exprs)))))
 
 

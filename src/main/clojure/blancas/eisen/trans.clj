@@ -48,6 +48,25 @@
 
 
 ;; +-------------------------------------------------------------+
+;; |                       Symbol Table.                         |
+;; +-------------------------------------------------------------+
+
+
+(def sym-tbl (list predefs))
+
+
+(defn push
+  [st coll] (conj st (set coll)))
+
+
+(defn declared?
+  [st name]
+  (if-let [st (seq st)]
+    (or (contains? (first st) name)
+        (declared? (rest st) name))))
+
+
+;; +-------------------------------------------------------------+
 ;; |                   Translator utilities.                     |
 ;; +-------------------------------------------------------------+
 
@@ -154,9 +173,9 @@
   [{:keys [name params value]}]
   (let [sym-name (symbol name)]
     (monad [env (trans-exprs params)
-	    _   (modify-se into (cons sym-name env))
+	    _   (modify-se push (cons sym-name env))
 	    code (trans-expr value)
-	    _   (modify-se difference (cons sym-name env))]
+	    _   (modify-se pop)]
       (->right `(blancas.morph.core/defcurry ~sym-name ~env ~code)))))
 
 
@@ -176,7 +195,7 @@
       (if (.startsWith value "_")
 	(->right (ref-host (name sym-name)))
         (monad [env get-se]
-          (if (contains? env sym-name)
+          (if (declared? env sym-name)
             (->right (make-ref sym-name))
 	    (if-let [var-inst (resolve sym-name)]
               (if (function? var-inst)
@@ -192,7 +211,7 @@
     (if (.startsWith value "_")
       (->right (ref-host (name sym-name)))
       (monad [env get-se]
-        (if (contains? env sym-name)
+        (if (declared? env sym-name)
           (->right (make-ref sym-name))
 	  (if (resolve sym-name)
 	    (->right sym-name)
@@ -209,7 +228,7 @@
 	    lst (trans-exprs args)]
       (if (.startsWith value "_")
         (->right `(~(host-func value) ~@lst))
-        (if (contains? env sym-name)
+        (if (declared? env sym-name)
           (->right (list* sym-name lst))
 	  (if-let [var-inst (resolve sym-name)]
             (if (function? var-inst)
@@ -268,9 +287,9 @@
   [{:keys [name params value]}]
   (let [sym (symbol name)]
     (monad [env  (trans-exprs params)
-	    _    (modify-se into env)
+	    _    (modify-se push env)
 	    code (trans-expr value)
-	    _    (modify-se difference env)]
+	    _    (modify-se pop)]
       (->right [sym `(blancas.morph.core/mcf ~env ~code)]))))
 
 
@@ -294,10 +313,10 @@
   "Translates a let expression."
   [{:keys [decls exprs]}]
   (let [env (map (comp symbol :name) decls)]
-    (monad [_     (modify-se into env)
+    (monad [_     (modify-se push env)
 	    decls (trans-bindings decls)
             exprs (trans-exprs exprs)
-	    _     (modify-se difference env)]
+	    _     (modify-se pop)]
       (->right `(let [~@(apply concat decls)] ~@exprs)))))
 
 
@@ -314,9 +333,9 @@
   [{:keys [name params value]}]
   (let [sym (symbol name)]
     (monad [env  (trans-exprs params)
-	    _    (modify-se into env)
+	    _    (modify-se push env)
 	    code (trans-expr value)
-	    _    (modify-se difference env)]
+	    _    (modify-se pop)]
       (->right (list sym env code)))))
 
 
@@ -332,10 +351,10 @@
   "Translates a letrec expression."
   [{:keys [decls exprs]}]
   (let [env (map (comp symbol :name) decls)]
-    (monad [_     (modify-se into env)
+    (monad [_     (modify-se push env)
 	    decls (seqm (map trans-binding-letrec decls))
             exprs (trans-exprs exprs)
-	    _     (modify-se difference env)]
+	    _     (modify-se pop)]
       (->right `(letfn [~@decls] ~@exprs)))))
 
 
@@ -343,9 +362,9 @@
   "Translates an AST into a Clojure anonymous function."
   [{:keys [params value]}]
   (monad [env  (trans-exprs params)
-	  _    (modify-se into env)
+	  _    (modify-se push env)
 	  code (trans-expr value)
-	  _    (modify-se difference env)]
+	  _    (modify-se pop)]
     (->right `(blancas.morph.core/mcf ~env ~code))))
 
 
@@ -484,6 +503,6 @@
    :error  if not ok, the error or warning message"
   [coll]
   (let [job (seqm (map eval-ast coll))]
-    (either [res (run-se job predefs)]
+    (either [res (run-se job sym-tbl)]
       {:ok false :error res}
       {:ok true :decls (map first res) :value (-> res last second)})))

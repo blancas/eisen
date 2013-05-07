@@ -52,14 +52,17 @@
 ;; +-------------------------------------------------------------+
 
 
-(def sym-tbl (list predefs))
+(def sym-tbl (list predefs))  ;; Symbol Table as a list of sets.
 
 
 (defn push
+  "Will push all elements of coll into the supplied symbol table."
   [st coll] (conj st (set coll)))
 
 
 (defn declared?
+  "Tests if name is declared in any of the scopes of the symbol
+   table, starting from the last one."
   [st name]
   (if-let [st (seq st)]
     (or (contains? (first st) name)

@@ -705,3 +705,15 @@
         c5 "  3 => \"3\" end"]
     (fact "a simple case"
       (eisen= (str c1 c2 c3 c4 c5)) => "2")))
+
+
+;; +-------------------------------------------------------------+
+;; |                   shadowed declarations.                    |
+;; +-------------------------------------------------------------+
+
+
+(deftest test-2200
+  (let [code1 "let foo = 99 in let foo = 101 in foo end; foo end"]
+    (fact "let with a shadowed value"
+      (eisen= code1) => 99)))
+
